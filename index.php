@@ -51,21 +51,21 @@
       <p>Select an option from the navigation menu or the tabs below to get started</p>
 
       <div class="row">
-        <a href="#">
+        <a href="add-bill.html">
           <div class="event-col">
             <h3>Add Bill</h3>
             <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Dolor omnis maiores laborum, impedit cumque aperiam cum dicta consequuntur doloremque a, debitis odio fugit sapiente adipisci provident voluptatibus quam similique unde!</p>
             <img class="event-image" src="images/KaraokeNight.jpg" alt="Karaoke Nights">
           </div>
         </a>
-        <a href="#">
+        <a href="add-customer.html">
           <div class="event-col">
             <h3>Add Customer</h3>
             <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Dolor omnis maiores laborum, impedit cumque aperiam cum dicta consequuntur doloremque a, debitis odio fugit sapiente adipisci provident voluptatibus quam similique unde!</p>
             <img class="event-image" src="images/DiscoNight.jpg" alt="Disco Nights ">
           </div>
         </a>
-        <a href="#">
+        <a href="add-payment.html">
           <div class="event-col">
             <h3>Add Payment</h3>
             <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Dolor omnis maiores laborum, impedit cumque aperiam cum dicta consequuntur doloremque a, debitis odio fugit sapiente adipisci provident voluptatibus quam similique unde!</p>
