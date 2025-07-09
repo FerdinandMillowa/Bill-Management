@@ -13,37 +13,7 @@
 
 <body>
   <header>
-    <div class="header_center">
-      <h1>Bill Management System</h1>
-    </div>
-    <br><br>
-    <hr>
-    <div class="navbar">
-      <div class="logo">
-        <a href="#">Pitch&Roll</a>
-      </div>
-      <ul class="links">
-        <li><a href="add-bill.html">Bills</a></li>
-        <li><a href="add-customer.html">Customers</a></li>
-        <li><a href="add-payment.html">Payments</a></li>
-        <li><a href="view-reports.html">Reports</a></li>
-      </ul>
-      <a href="#" class="action_btn">Get started</a>
-      <div class="toggle_btn">
-        <i class="fa-solid fa-bars"></i>
-      </div>
-    </div>
-
-
-    <div class="dropdown_menu ">
-      <li><a href="add-bill.html">Add Bill</a></li>
-      <li><a href="add-customer.html">Add Customer</a></li>
-      <li><a href="add-payment.html">Add Payment</a></li>
-      <li><a href="view-bills.php">View Bills</a></li>
-      <li><a href="view-customers.php">View Customers</a></li>
-      <li><a href="view-reports.html">Reports</a></li>
-      <li><a href="#" class="action_btn">Get started</a></li>
-    </div>
+    <?php include 'header.php'; ?>
   </header>
 
   <main>
@@ -58,7 +28,7 @@
             <img class="event-image" src="images/KaraokeNight.jpg" alt="Karaoke Nights">
           </div>
         </a>
-        <a href="add-customer.html">
+        <a href="add-customer.php">
           <div class="event-col">
             <h3>Add Customer</h3>
             <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Dolor omnis maiores laborum, impedit cumque aperiam cum dicta consequuntur doloremque a, debitis odio fugit sapiente adipisci provident voluptatibus quam similique unde!</p>

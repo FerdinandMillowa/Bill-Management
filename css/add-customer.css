@@ -1,0 +1,208 @@
+/* Add Customer Form Styling */
+
+header {
+    grid-area: header;
+    width: 100%;
+}
+
+footer {
+    grid-area: footer;
+    width: 100%;
+}
+
+body {
+    display: grid;
+    grid-template-areas: 
+        "header header"
+        "form list"
+        "footer footer";
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+.form-section {
+    grid-area: form;
+    background: #24323d;
+    border-radius: 20px;
+    padding: 20px;
+    color: #fff;
+    height: fit-content;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+}
+
+.list-section {
+    grid-area: list;
+    background: #24323d;
+    border-radius: 20px;
+    padding: 20px;
+    color: #fff;
+    height: fit-content;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.customer-list h3 {
+    color: #1ab188;
+    margin: 0 0 20px 0;
+    margin-bottom: 15px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #1ab188;
+    padding-bottom: 8px;
+}
+
+.customer-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.customer-list li {
+    background: #2c3e48;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.customer-list li:hover {
+    transform: translateX(5px);
+    background: #344955;
+}
+
+.customer-list li strong {
+    color: #1ab188;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.customer-list li span {
+    display: block;
+    margin-top: 3px;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+/* Add this to improve the layout spacing */
+.form-section, .list-section {
+    padding: 25px;
+    box-sizing: border-box;
+    margin: 10px;
+    padding: 25px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #24323d;
+    padding: 20px;
+    border-radius: 20px;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+    color: #1ab188;
+    font-size: 28px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.message, .signin {
+    font-size: 14px;
+    text-align: center;
+}
+
+.signin a {
+    color: #1ab188;
+    text-decoration: none;
+}
+
+.signin a:hover {
+    text-decoration: underline;
+    color: #1ec79a;
+}
+
+.form-group {
+    display: flex;
+    gap: 200px;
+    width: 100%;
+}
+.form-group label {
+    padding: auto;
+    width: 100%;
+    
+}
+
+.form-group input {
+    width: 100%;
+}
+
+.form label {
+    position: relative;
+    display: block;
+    /* margin-left: 0px;
+    margin-right: 10px; */
+}
+
+.form label input {
+    width: 100%;
+    padding: 10px 10px 20px 10px;
+    border: none;
+    border-radius: 10px;
+    outline: none;
+}
+
+.form label input + span {
+    position: absolute;
+    top: 15px;
+    left: 0px;
+    color: #24323d;
+    font-size: 0.9em;
+    transition: 0.3s ease;
+    pointer-events: none;
+}
+
+.form label input:focus + span,
+.form label input:not(:placeholder-shown) + span {
+    top: 30px;
+    font-size: 0.7em;
+    font-weight: 600;
+}
+
+.form label input:valid + span {
+    color: #1ab188;
+}
+
+.submit {
+    border: none;
+    background: #1ab188;
+    padding: 10px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.submit:hover {
+    background: #1ec79a;
+}
+
+.success-message{
+    color: green;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+.error-message{
+    color: red;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 16px;
+}
