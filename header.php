@@ -20,10 +20,10 @@
         <hr>
         <div class="navbar">
             <div class="logo">
-                <a href="#">Pitch&Roll</a>
+                <a href="index.php">Pitch&Roll</a>
             </div>
             <ul class="links">
-                <li><a href="add-bill.html">Bills</a></li>
+                <li><a href="add-bills.php">Bills</a></li>
                 <li><a href="add-customer.html">Customers</a></li>
                 <li><a href="add-payment.html">Payments</a></li>
                 <li><a href="view-reports.html">Reports</a></li>

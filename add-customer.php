@@ -89,7 +89,7 @@ $recent_customers = $conn->query("SELECT first_name, last_name, email, phone FRO
 
             <label>
                 <input type="tel" name="phone" required placeholder=" " maxlength="13" pattern="^(?:\+265|0)\d{9}$"
-                    title="Phone number must start with +265 or 0 and contain exactly 10 digits after.">
+                    title="Phone number must start with +265 or 0 and contain exactly 9 digits after.">
                 <span>Phone</span>
             </label>
 
@@ -100,7 +100,7 @@ $recent_customers = $conn->query("SELECT first_name, last_name, email, phone FRO
 
             <button type="submit" class="submit">Add Customer</button>
 
-            <p class="signin">Return to <a href="index.php">Dashboard</a></p>
+            <p class="signin">Return to <a href="index.php">Home</a></p>
         </form>
     </section>
 
@@ -123,17 +123,10 @@ $recent_customers = $conn->query("SELECT first_name, last_name, email, phone FRO
             </ul>
         </div>
     </section>
+    <footer>
+        <?php include 'footer.php' ?>
+    </footer>
 
-    <section class="footer">
-        <h4>About Us</h4>
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium ipsam aut dolores iste voluptatem numquam id amet, <br>non sapiente quod, ad a, maxime accusantium praesentium! Pariatur quia exercitationem facere possimus?</p>
-        <div class="icons">
-            <i class="fa fa-facebook"></i>
-            <i class="fa fa-twitter"></i>
-            <i class="fa fa-instagram"></i>
-        </div>
-        <p>Made with <i class="fa fa-heart-o"></i> by Ferdinand Millowa</p>
-    </section>
 
 </body>
 

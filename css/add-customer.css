@@ -78,7 +78,7 @@ body {
 .customer-list li strong {
     color: #1ab188;
     display: block;
-    margin-bottom: 5px;
+    /* margin-bottom: 5px; */
 }
 
 .customer-list li span {

@@ -21,7 +21,7 @@
       <p>Select an option from the navigation menu or the tabs below to get started</p>
 
       <div class="row">
-        <a href="add-bill.html">
+        <a href="add-bills.php">
           <div class="event-col">
             <h3>Add Bill</h3>
             <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Dolor omnis maiores laborum, impedit cumque aperiam cum dicta consequuntur doloremque a, debitis odio fugit sapiente adipisci provident voluptatibus quam similique unde!</p>
@@ -35,7 +35,7 @@
             <img class="event-image" src="images/DiscoNight.jpg" alt="Disco Nights ">
           </div>
         </a>
-        <a href="add-payment.html">
+        <a href="add-payments.php">
           <div class="event-col">
             <h3>Add Payment</h3>
             <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Dolor omnis maiores laborum, impedit cumque aperiam cum dicta consequuntur doloremque a, debitis odio fugit sapiente adipisci provident voluptatibus quam similique unde!</p>
@@ -45,16 +45,9 @@
       </div>
     </section>
 
-    <section class="footer">
-      <h4>About Us</h4>
-      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium ipsam aut dolores iste voluptatem numquam id amet, <br>non sapiente quod, ad a, maxime accusantium praesentium! Pariatur quia exercitationem facere possimus?</p>
-      <div class="icons">
-        <i class="fa fa-facebook"></i>
-        <i class="fa fa-twitter"></i>
-        <i class="fa fa-instagram"></i>
-      </div>
-      <p>Made with <i class="fa fa-heart-o"></i> by Ferdinand Millowa</p>
-    </section>
+    <?php include 'footer.php' ?>
+
+
   </main>
   <script src="js/script.js"></script>
 
