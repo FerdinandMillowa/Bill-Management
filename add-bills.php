@@ -110,7 +110,7 @@ $recent_bills = $conn->query("
             </label>
 
             <button type="submit" class="submit">Add Bill</button>
-            <p class="signin">Return to <a href="index.php">Dashboard</a></p>
+            <p class="signin">Return to <a href="index.php">Home</a></p>
         </form>
     </section>
 

@@ -120,7 +120,7 @@ $recent_payments = $conn->query("
       </label>
 
       <button type="submit" class="submit">Record Payment</button>
-      <p class="signin">Return to <a href="index.php">Dashboard</a></p>
+      <p class="signin">Return to <a href="index.php">Home</a></p>
     </form>
   </section>
 
