@@ -24,8 +24,8 @@
             </div>
             <ul class="links">
                 <li><a href="add-bills.php">Bills</a></li>
-                <li><a href="add-customer.html">Customers</a></li>
-                <li><a href="add-payment.html">Payments</a></li>
+                <li><a href="add-customer.php">Customers</a></li>
+                <li><a href="add-payments.php">Payments</a></li>
                 <li><a href="view-reports.html">Reports</a></li>
             </ul>
             <a href="#" class="action_btn">Logout</a>
