@@ -1,6 +1,6 @@
 <?php
-// Remove the HTML wrapper since this is an included file
-// Just keep the header content
+// Include the auth helper at the top of the file
+require_once 'auth-helper.php';
 ?>
 <div class="header_center">
     <h1>Bill Management System</h1>
