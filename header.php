@@ -1,5 +1,4 @@
 <?php
-// Include the auth helper at the top of the file
 require_once 'auth-helper.php';
 ?>
 <div class="header_center">
