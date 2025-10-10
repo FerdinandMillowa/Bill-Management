@@ -1,5 +1,4 @@
 <?php
-
 class Database
 {
     private $host = "localhost";
@@ -18,10 +17,11 @@ class Database
                 throw new Exception("Connection failed: " . $this->connection->connect_error);
             }
 
-            // Set charset to utf8
-            $this->connection->set_charset("utf8");
+            // Set charset to utf8mb4 for better Unicode support
+            $this->connection->set_charset("utf8mb4");
         } catch (Exception $e) {
-            die("Database connection error: " . $e->getMessage());
+            error_log("Database connection error: " . $e->getMessage());
+            die("Database connection error. Please try again later.");
         }
     }
 
@@ -40,23 +40,11 @@ class Database
     }
 }
 
-// Alternative simple connection (if you don't need OOP)
-function getSimpleConnection()
-{
-    $servername = "localhost";
-    $username = "root";
-    $password = "123";
-    $dbname = "your_database_name";
-
-    $conn = new mysqli($servername, $username, $password, $dbname);
-
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    return $conn;
+// Create a global connection instance
+try {
+    $database = new Database();
+    $conn = $database->getConnection();
+} catch (Exception $e) {
+    error_log("Failed to create database connection: " . $e->getMessage());
+    die("System initialization failed. Please contact administrator.");
 }
-
-// Create a global connection instance (optional)
-$database = new Database();
-$conn = $database->getConnection();

@@ -1,17 +1,14 @@
 <?php
-session_start();
-
-// Check if user is logged in and is an admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: login.php");
-    exit;
-}
+require_once 'auth-helper.php';
+requireAdminAuth();
 
 // Database connection
 require_once 'db-connection.php';
-// Fetch users from the database
-$sql = "SELECT * FROM users";
-$result = $conn->query($sql);
+
+// Fetch users from the database using prepared statement
+$stmt = $conn->prepare("SELECT id, username, role FROM users ORDER BY id DESC");
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -37,13 +34,11 @@ $result = $conn->query($sql);
             while ($user = $result->fetch_assoc()) { ?>
                 <tr>
                     <td><?php echo $user['id']; ?></td>
-                    <td><?php echo $user['username']; ?></td>
-                    <td><?php echo $user['role']; ?></td>
+                    <td><?php echo htmlspecialchars($user['username']); ?></td>
+                    <td><?php echo htmlspecialchars($user['role']); ?></td>
                     <td>
-                        <!-- You can add edit/delete functionality here -->
                         <a href="edit-user.php?id=<?php echo $user['id']; ?>">Edit</a>
                         <a href="delete-user.php?id=<?php echo $user['id']; ?>" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
-
                     </td>
                 </tr>
             <?php }
@@ -60,5 +55,6 @@ $result = $conn->query($sql);
 </html>
 
 <?php
+$stmt->close();
 $conn->close();
 ?>

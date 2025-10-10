@@ -1,25 +1,28 @@
 <?php
-session_start();
-if (!isset($_SESSION['admin_logged_in'])) {
-    header("Location: admin-login.html");
-    exit();
-}
+require_once 'auth-helper.php';
+requireAdminAuth();
 
 // Database connection
 require_once 'db-connection.php';
 
-// Handle search and filter input
-$search_term = isset($_POST['search_term']) ? $_POST['search_term'] : '';
+// Handle search and filter input with sanitization
+$search_term = isset($_POST['search_term']) ? sanitizeInput($_POST['search_term']) : '';
 $balance_status = isset($_POST['balance_status']) ? $_POST['balance_status'] : '';
 
-// SQL query with filters
-$sql = "SELECT c.id, c.name, 
-            (SELECT SUM(amount) FROM bills WHERE customer_id = c.id) AS total_bills,
-            (SELECT SUM(amount) FROM payments WHERE customer_id = c.id) AS total_payments
+// SQL query with prepared statement
+$sql = "SELECT c.id, c.first_name, c.last_name, 
+               COALESCE(SUM(b.amount), 0) AS total_bills,
+               COALESCE(SUM(p.amount), 0) AS total_payments
         FROM customers c 
-        WHERE c.name LIKE '%$search_term%'";
+        LEFT JOIN bills b ON c.id = b.customer_id
+        LEFT JOIN payments p ON c.id = p.customer_id
+        WHERE (c.first_name LIKE CONCAT('%', ?, '%') OR c.last_name LIKE CONCAT('%', ?, '%'))
+        GROUP BY c.id, c.first_name, c.last_name";
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ss", $search_term, $search_term);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -38,7 +41,7 @@ $result = $conn->query($sql);
     <!-- Filter and Search Form -->
     <form action="reports-customers.php" method="POST">
         <label for="search_term">Search by Customer Name:</label>
-        <input type="text" id="search_term" name="search_term" value="<?php echo $search_term; ?>">
+        <input type="text" id="search_term" name="search_term" value="<?php echo htmlspecialchars($search_term); ?>">
 
         <label for="balance_status">Filter by Balance Status:</label>
         <select id="balance_status" name="balance_status">
@@ -60,7 +63,7 @@ $result = $conn->query($sql);
             <th>Outstanding Balance</th>
         </tr>
         <?php
-        if ($result && $result->num_rows > 0) {
+        if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $outstanding_balance = $row['total_bills'] - $row['total_payments'];
                 $status = ($outstanding_balance > 0) ? "outstanding" : "settled";
@@ -70,12 +73,13 @@ $result = $conn->query($sql);
                     continue;
                 }
 
+                $customer_name = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
                 echo "<tr>
                     <td>{$row['id']}</td>
-                    <td><a href='view-customer.php?id=<?php echo $row[id]; ?>'><?php echo $row[name]; ?></a></td>
-                    <td>" . ($row['total_bills'] ? $row['total_bills'] : 0) . "</td>
-                    <td>" . ($row['total_payments'] ? $row['total_payments'] : 0) . "</td>
-                    <td>" . ($outstanding_balance > 0 ? $outstanding_balance : 0) . "</td>
+                    <td><a href='view-customer.php?id={$row['id']}'>{$customer_name}</a></td>
+                    <td>MWK " . number_format($row['total_bills'], 2) . "</td>
+                    <td>MWK " . number_format($row['total_payments'], 2) . "</td>
+                    <td>MWK " . number_format(max($outstanding_balance, 0), 2) . "</td>
                 </tr>";
             }
         } else {
@@ -88,5 +92,6 @@ $result = $conn->query($sql);
 </html>
 
 <?php
+$stmt->close();
 $conn->close();
 ?>

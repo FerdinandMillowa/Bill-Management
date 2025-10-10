@@ -1,11 +1,6 @@
 <?php
-session_start();
-
-// Check if user is logged in and is an admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: admin-login.php");
-    exit;
-}
+require_once 'auth-helper.php';
+requireAdminAuth();
 ?>
 
 <!DOCTYPE html>
@@ -29,16 +24,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            /* Makes sure it's on top of other elements */
         }
 
         #loading img {
             width: 100px;
-            /* Adjust as needed */
             height: 100px;
-            /* Adjust as needed */
             animation: spin 2s linear infinite;
-            /* Spinning animation */
         }
 
         @keyframes spin {
@@ -55,12 +46,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 <body>
     <div id="loading">
-        <img src="path/to/your/logo.png" alt="Loading Logo"> <!-- Update this path -->
+        <img src="images/logo.png" alt="Loading Logo"> <!-- Update this path -->
     </div>
 
     <div>
         <h1>Admin Dashboard</h1>
-        <p>Welcome, <?php echo $_SESSION['username']; ?>!</p>
+        <p>Welcome, <?php echo htmlspecialchars($_SESSION['admin_username'] ?? 'Admin'); ?>!</p>
 
         <nav>
             <ul>
@@ -73,13 +64,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     </div>
 
     <h2>Manage Users</h2>
-    <a href="view-users.php">View All Users</a> <!-- Link to view users if you create that page -->
+    <a href="view-users.php">View All Users</a>
 
     <script>
         // Hide the loading screen after a brief delay
         window.onload = function() {
             document.getElementById("loading").style.display = "none";
-            document.querySelector("div").style.display = "block"; // Show main content
+            document.querySelector("div").style.display = "block";
         };
     </script>
 

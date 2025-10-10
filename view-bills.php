@@ -1,24 +1,18 @@
 <?php
-session_start();
-if (!isset($_SESSION['admin_logged_in'])) {
-    header("Location: admin-login.html");
-    exit();
-}
+require_once 'auth-helper.php';
+requireAdminAuth();
 
 // Database connection
 require_once 'db-connection.php';
 
-// Fetch all bills
-$sql = "SELECT b.id, b.bill_name, b.amount, b.description, b.created_at, c.name AS customer_name 
-        FROM bills b 
-        JOIN customers c ON b.customer_id = c.id";
-
-$result = $conn->query($sql);
-
-// Check for SQL errors
-if (!$result) {
-    die("SQL Error: " . $conn->error);
-}
+// Fetch all bills using prepared statement
+$stmt = $conn->prepare("SELECT b.id, b.bill_name, b.amount, b.description, b.created_at, 
+                               c.first_name, c.last_name 
+                        FROM bills b 
+                        JOIN customers c ON b.customer_id = c.id 
+                        ORDER BY b.created_at DESC");
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -46,16 +40,17 @@ if (!$result) {
         <?php
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
+                $customer_name = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
                 echo "<tr>
                     <td>{$row['id']}</td>
-                    <td>{$row['customer_name']}</td>
-                    <td>{$row['bill_name']}</td>
-                    <td>{$row['amount']}</td>
-                    <td>{$row['description']}</td>
-                    <td>{$row['created_at']}</td>
+                    <td>{$customer_name}</td>
+                    <td>" . htmlspecialchars($row['bill_name']) . "</td>
+                    <td>MWK " . number_format($row['amount'], 2) . "</td>
+                    <td>" . htmlspecialchars($row['description']) . "</td>
+                    <td>" . htmlspecialchars($row['created_at']) . "</td>
                     <td>
                         <a href='edit-bill.php?id={$row['id']}'>Edit</a> | 
-                        <a href='delete-bill.php?id={$row['id']}'>Delete</a>
+                        <a href='delete-bill.php?id={$row['id']}' onclick='return confirm(\"Are you sure you want to delete this bill?\")'>Delete</a>
                     </td>
                 </tr>";
             }
@@ -69,5 +64,6 @@ if (!$result) {
 </html>
 
 <?php
+$stmt->close();
 $conn->close();
 ?>

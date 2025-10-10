@@ -1,16 +1,14 @@
 <?php
-session_start();
-if (!isset($_SESSION['admin_logged_in'])) {
-    header("Location: admin-login.html");
-    exit();
-}
+require_once 'auth-helper.php';
+requireAdminAuth();
 
 // Database connection
 require_once 'db-connection.php';
 
-// Fetch unapproved customers
-$sql = "SELECT * FROM customers WHERE approved = FALSE";
-$result = $conn->query($sql);
+// Fetch unapproved customers using prepared statement
+$stmt = $conn->prepare("SELECT id, first_name, last_name, email, phone FROM customers WHERE status = 'pending'");
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -36,11 +34,12 @@ $result = $conn->query($sql);
         <?php
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
+                $full_name = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
                 echo "<tr>
                     <td>{$row['id']}</td>
-                    <td>{$row['name']}</td>
-                    <td>{$row['email']}</td>
-                    <td>{$row['phone']}</td>
+                    <td>{$full_name}</td>
+                    <td>" . htmlspecialchars($row['email']) . "</td>
+                    <td>" . htmlspecialchars($row['phone']) . "</td>
                     <td><a href='approve-customer.php?id={$row['id']}'>Approve</a></td>
                 </tr>";
             }
@@ -54,5 +53,6 @@ $result = $conn->query($sql);
 </html>
 
 <?php
+$stmt->close();
 $conn->close();
 ?>

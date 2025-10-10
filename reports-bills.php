@@ -1,30 +1,40 @@
 <?php
-session_start();
-if (!isset($_SESSION['admin_logged_in'])) {
-    header("Location: admin-login.html");
-    exit();
-}
+require_once 'auth-helper.php';
+requireAdminAuth();
 
 // Database connection
 require_once 'db-connection.php';
 
-// Handle filter and search input
-$customer_filter = isset($_POST['customer']) ? $_POST['customer'] : '';
+// Handle filter and search input with sanitization
+$customer_filter = isset($_POST['customer']) ? sanitizeInput($_POST['customer']) : '';
 $date_from = isset($_POST['date_from']) ? $_POST['date_from'] : '';
 $date_to = isset($_POST['date_to']) ? $_POST['date_to'] : '';
-$search_term = isset($_POST['search_term']) ? $_POST['search_term'] : '';
+$search_term = isset($_POST['search_term']) ? sanitizeInput($_POST['search_term']) : '';
 
-// SQL query with filters
-$sql = "SELECT b.id, b.bill_name, b.amount, b.description, b.date_time, c.name AS customer_name 
+// Build SQL query with prepared statement
+$sql = "SELECT b.id, b.bill_name, b.amount, b.description, b.created_at, 
+               c.first_name, c.last_name 
         FROM bills b 
         JOIN customers c ON b.customer_id = c.id
-        WHERE (c.name LIKE '%$customer_filter%' AND b.bill_name LIKE '%$search_term%')";
+        WHERE (c.first_name LIKE CONCAT('%', ?, '%') OR c.last_name LIKE CONCAT('%', ?, '%')) 
+        AND b.bill_name LIKE CONCAT('%', ?, '%')";
+
+$params = [$customer_filter, $customer_filter, $search_term];
+$types = "sss";
 
 if ($date_from && $date_to) {
-    $sql .= " AND b.date_time BETWEEN '$date_from' AND '$date_to'";
+    $sql .= " AND DATE(b.created_at) BETWEEN ? AND ?";
+    $params[] = $date_from;
+    $params[] = $date_to;
+    $types .= "ss";
 }
 
-$result = $conn->query($sql);
+$sql .= " ORDER BY b.created_at DESC";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param($types, ...$params);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -43,16 +53,16 @@ $result = $conn->query($sql);
     <!-- Filter and Search Form -->
     <form action="reports-bills.php" method="POST">
         <label for="customer">Filter by Customer:</label>
-        <input type="text" id="customer" name="customer" value="<?php echo $customer_filter; ?>">
+        <input type="text" id="customer" name="customer" value="<?php echo htmlspecialchars($customer_filter); ?>">
 
         <label for="date_from">Date From:</label>
-        <input type="date" id="date_from" name="date_from" value="<?php echo $date_from; ?>">
+        <input type="date" id="date_from" name="date_from" value="<?php echo htmlspecialchars($date_from); ?>">
 
         <label for="date_to">Date To:</label>
-        <input type="date" id="date_to" name="date_to" value="<?php echo $date_to; ?>">
+        <input type="date" id="date_to" name="date_to" value="<?php echo htmlspecialchars($date_to); ?>">
 
         <label for="search_term">Search by Bill Name:</label>
-        <input type="text" id="search_term" name="search_term" value="<?php echo $search_term; ?>">
+        <input type="text" id="search_term" name="search_term" value="<?php echo htmlspecialchars($search_term); ?>">
 
         <input type="submit" value="Apply Filters">
     </form>
@@ -68,15 +78,16 @@ $result = $conn->query($sql);
             <th>Date/Time</th>
         </tr>
         <?php
-        if ($result && $result->num_rows > 0) {
+        if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
+                $customer_name = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
                 echo "<tr>
                     <td>{$row['id']}</td>
-                    <td>{$row['customer_name']}</td>
-<td><a href='view-bill.php?id=<?php echo $row[id]; ?>'><?php echo $row[bill_name]; ?></a></td>
-                    <td>{$row['amount']}</td>
-                    <td>{$row['description']}</td>
-                    <td>{$row['date_time']}</td>
+                    <td>{$customer_name}</td>
+                    <td><a href='view-bill.php?id={$row['id']}'>" . htmlspecialchars($row['bill_name']) . "</a></td>
+                    <td>MWK " . number_format($row['amount'], 2) . "</td>
+                    <td>" . htmlspecialchars($row['description']) . "</td>
+                    <td>" . htmlspecialchars($row['created_at']) . "</td>
                 </tr>";
             }
         } else {
@@ -89,5 +100,6 @@ $result = $conn->query($sql);
 </html>
 
 <?php
+$stmt->close();
 $conn->close();
 ?>
