@@ -26,7 +26,14 @@
                 <li><a href="add-bills.php">Bills</a></li>
                 <li><a href="add-customer.php">Customers</a></li>
                 <li><a href="add-payments.php">Payments</a></li>
-                <li><a href="reports.php">Reports</a></li>
+                <li>
+                    <a href="#">Reports</a>
+                    <ul class="dropdown">
+                        <li><a href="#view-reports">View Reports</a></li>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                    </ul>
+                </li>
+                <li><a href="reports.php">Dashboard</a></li>
             </ul>
             <a href="#" class="action_btn">Logout</a>
             <div class="toggle_btn">

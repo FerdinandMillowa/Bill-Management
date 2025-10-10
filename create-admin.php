@@ -1,16 +1,8 @@
 <?php
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = "Example@2022#";
-$dbname = "bill_management_system";
+require_once 'db-connection.php';
 
 $conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 
 // Hash password for security
 $password = password_hash("admin123", PASSWORD_BCRYPT);

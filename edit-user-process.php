@@ -8,17 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = "Example@2022#";
-$dbname = "bill_management_system";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'db-connection.php';
 
 // Retrieve user input
 $user_id = $_POST['id'];

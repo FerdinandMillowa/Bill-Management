@@ -4,11 +4,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// DB connection
-$conn = new mysqli("localhost", "root", "Example@2022#", "bill_management_system");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// database connection 
+require_once 'db-connection.php';
 
 $success = "";
 $error = "";
@@ -37,6 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 $error = "Error saving bill: " . $conn->error;
             }
+            $stmt->close();
         }
     }
 }
@@ -49,6 +47,9 @@ $recent_bills = $conn->query("
     JOIN customers c ON b.customer_id = c.id
     ORDER BY b.created_at DESC LIMIT 5
 ");
+
+// Fetch customers for dropdown
+$customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE status='approved'");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -89,13 +90,11 @@ $recent_bills = $conn->query("
 
             <label>
                 <select id="customer_id" name="customer_id" required style="width:100%">
-                    <?php
-                    $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE status='approved'");
-                    while ($cust = $customers->fetch_assoc()):
-                        $name = htmlspecialchars($cust['first_name'] . " " . $cust['last_name']);
-                        echo "<option value='{$cust['id']}'>{$name}</option>";
-                    endwhile;
-                    ?>
+                    <option value="">Select Customer</option>
+                    <?php while ($cust = $customers->fetch_assoc()): ?>
+                        <?php $name = htmlspecialchars($cust['first_name'] . " " . $cust['last_name']); ?>
+                        <option value="<?php echo $cust['id']; ?>"><?php echo $name; ?></option>
+                    <?php endwhile; ?>
                 </select>
             </label>
 
@@ -105,7 +104,7 @@ $recent_bills = $conn->query("
             </label>
 
             <label>
-                <input type="text" name="last_name" required placeholder=" " maxlength="50">
+                <input type="text" name="description" required placeholder=" " maxlength="50">
                 <span>Description</span>
             </label>
 

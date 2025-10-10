@@ -8,10 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "bill_management_system";
+require_once 'db-connection.php';
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

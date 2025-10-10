@@ -6,10 +6,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
 }
 
 // Database connection
-$conn = new mysqli('localhost', 'root', 'Example@2022#', 'bill_management_system');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'db-connection.php';
 
 // Fetch all approved customers
 $sql = "SELECT id, name FROM customers WHERE approved = 1";

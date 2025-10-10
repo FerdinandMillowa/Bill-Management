@@ -5,10 +5,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // DB connection
-$conn = new mysqli("localhost", "root", "Example@2022#", "bill_management_system");
-if ($conn->connect_error) {
-  die("Connection failed: " . $conn->connect_error);
-}
+require_once 'db-connection.php';
 
 $success = "";
 $error = "";

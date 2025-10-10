@@ -13,10 +13,7 @@ if (!isset($_GET['id'])) {
 $customer_id = $_GET['id'];
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'bill_management_system');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'db-connection.php';
 
 // Fetch customer details
 $customer_sql = "SELECT * FROM customers WHERE id = $customer_id";

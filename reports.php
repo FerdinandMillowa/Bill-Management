@@ -1,9 +1,7 @@
 <?php
 session_start();
-$conn = new mysqli("localhost", "root", "Example@2022#", "bill_management_system");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// DB connection
+require_once 'db-connection.php';
 
 $report_type = $_GET['report_type'] ?? 'daily';
 

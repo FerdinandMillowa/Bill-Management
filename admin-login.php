@@ -2,10 +2,7 @@
 session_start();
 
 // Database connection
-$conn = new mysqli('localhost', 'root', 'Example@2022#', 'bill_management_system');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'db-connection.php';
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = $conn->real_escape_string($_POST['username']);
