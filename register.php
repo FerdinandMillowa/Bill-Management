@@ -1,3 +1,8 @@
+<?php
+require_once 'auth-helper.php';
+requireAdminAuth();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,16 +16,19 @@
 <body>
     <h2>Register New User</h2>
     <form action="register-process.php" method="POST">
+        <?php echo getFormTokenField(); ?>
+
         <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
+        <input type="text" id="username" name="username" required
+            value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>
 
         <label for="role">Role:</label>
         <select id="role" name="role" required>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+            <option value="user" <?php echo (isset($_POST['role']) && $_POST['role'] == 'user') ? 'selected' : ''; ?>>User</option>
+            <option value="admin" <?php echo (isset($_POST['role']) && $_POST['role'] == 'admin') ? 'selected' : ''; ?>>Admin</option>
         </select>
 
         <button type="submit">Register</button>

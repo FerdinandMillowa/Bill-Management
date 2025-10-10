@@ -7,31 +7,55 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-// Database connection
+// Database connection and security
 require_once 'db-connection.php';
+require_once 'auth-helper.php';
 
-// Retrieve user input
-$username = $_POST['username'];
+// Retrieve and sanitize user input
+$username = secureFormInput($_POST['username']);
 $password = $_POST['password'];
-$role = $_POST['role'];
+$role = secureFormInput($_POST['role']);
 
-// Check if username already exists
-$sql = "SELECT * FROM users WHERE username = '$username'";
-$result = $conn->query($sql);
+try {
+    // Validate CSRF token
+    validateFormToken();
 
-if ($result->num_rows > 0) {
-    echo "Username already taken.";
-} else {
+    // Validate inputs
+    if (empty($username) || empty($password) || empty($role)) {
+        throw new Exception("All fields are required.");
+    }
+
+    if (strlen($password) < 8) {
+        throw new Exception("Password must be at least 8 characters long.");
+    }
+
+    // Check if username already exists
+    $check_stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
+    $check_stmt->bind_param("s", $username);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        throw new Exception("Username already taken.");
+    }
+    $check_stmt->close();
+
     // Hash the password for security
-    $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
     // Insert new user into the database
-    $sql = "INSERT INTO users (username, password, role) VALUES ('$username', '$passwordHash', '$role')";
-    if ($conn->query($sql) === TRUE) {
-        echo "User registered successfully.";
+    $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $username, $passwordHash, $role);
+
+    if ($stmt->execute()) {
+        echo "User registered successfully. <a href='view-users.php'>View Users</a>";
     } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
+        throw new Exception("Error registering user: " . $conn->error);
     }
+
+    $stmt->close();
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . " <a href='register.php'>Go Back</a>";
 }
 
 $conn->close();

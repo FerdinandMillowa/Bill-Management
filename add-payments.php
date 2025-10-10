@@ -4,40 +4,64 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// DB connection
+// DB connection and security
 require_once 'db-connection.php';
+require_once 'auth-helper.php';
 
 $success = "";
 $error = "";
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  $customer_id = $conn->real_escape_string($_POST['customer_id']);
-  $amount = $conn->real_escape_string($_POST['amount']);
-  $payment_method = $conn->real_escape_string($_POST['payment_method']);
+  try {
+    // Validate CSRF token
+    validateFormToken();
 
-  // Validate inputs
-  if (empty($customer_id)) {
-    $error = "Customer selection is required.";
-  } elseif (!is_numeric($amount) || $amount <= 0) {
-    $error = "Amount must be a positive number.";
-  } else {
-    // Check customer exists
-    $check = $conn->query("SELECT id FROM customers WHERE id='$customer_id' AND status='approved'");
-    if ($check->num_rows == 0) {
-      $error = "Selected customer is not approved or doesn't exist.";
-    } else {
-      $stmt = $conn->prepare("INSERT INTO payments (customer_id, amount, payment_method) VALUES (?, ?, ?)");
-      $stmt->bind_param("ids", $customer_id, $amount, $payment_method);
-      if ($stmt->execute()) {
-        $success = "Payment recorded successfully!";
+    // Sanitize inputs
+    $customer_id = intval($_POST['customer_id']);
+    $amount = floatval($_POST['amount']);
+    $payment_method = secureFormInput($_POST['payment_method']);
 
-        // Update bill status if full amount paid
-        $conn->query("UPDATE bills SET status='paid' WHERE customer_id='$customer_id' AND status='unpaid'");
-      } else {
-        $error = "Error saving payment: " . $conn->error;
-      }
+    // Validate inputs
+    if (empty($customer_id)) {
+      throw new Exception("Customer selection is required.");
     }
+
+    if (!validateAmount($amount)) {
+      throw new Exception("Amount must be a positive number.");
+    }
+
+    if (empty($payment_method)) {
+      throw new Exception("Payment method is required.");
+    }
+
+    // Check customer exists and is approved
+    $check = $conn->prepare("SELECT id FROM customers WHERE id=? AND status='approved'");
+    $check->bind_param("i", $customer_id);
+    $check->execute();
+    $check_result = $check->get_result();
+
+    if ($check_result->num_rows == 0) {
+      throw new Exception("Selected customer is not approved or doesn't exist.");
+    }
+    $check->close();
+
+    // Insert payment
+    $stmt = $conn->prepare("INSERT INTO payments (customer_id, amount, payment_method) VALUES (?, ?, ?)");
+    $stmt->bind_param("ids", $customer_id, $amount, $payment_method);
+
+    if ($stmt->execute()) {
+      $success = "Payment recorded successfully!";
+
+      // Update bill status if full amount paid (optional enhancement)
+      // $conn->query("UPDATE bills SET status='paid' WHERE customer_id='$customer_id' AND status='unpaid'");
+    } else {
+      throw new Exception("Error saving payment: " . $conn->error);
+    }
+
+    $stmt->close();
+  } catch (Exception $e) {
+    $error = $e->getMessage();
   }
 }
 
@@ -57,7 +81,7 @@ $recent_payments = $conn->query("
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Add Payment</title>
-  <link rel="stylesheet" href="css/add-customer.css"> <!-- Using same CSS as reference -->
+  <link rel="stylesheet" href="css/add-customer.css">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -83,17 +107,21 @@ $recent_payments = $conn->query("
 
   <!-- Left: Add Payment Form -->
   <section class="form-section">
-    <form class="form" action="add-payment.php" method="POST">
+    <form class="form" action="add-payments.php" method="POST">
       <p class="title">Record Payment</p>
       <p class="message">Fill in the payment details</p>
 
+      <?php echo getFormTokenField(); ?>
+
       <label>
         <select id="customer_id" name="customer_id" required style="width:100%">
+          <option value="">Select Customer</option>
           <?php
           $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE status='approved'");
           while ($cust = $customers->fetch_assoc()):
             $name = htmlspecialchars($cust['first_name'] . " " . $cust['last_name']);
-            echo "<option value='{$cust['id']}'>{$name}</option>";
+            $selected = (isset($_POST['customer_id']) && $_POST['customer_id'] == $cust['id']) ? 'selected' : '';
+            echo "<option value='{$cust['id']}' $selected>{$name}</option>";
           endwhile;
           ?>
         </select>
@@ -101,17 +129,18 @@ $recent_payments = $conn->query("
       </label>
 
       <label>
-        <input type="number" name="amount" required placeholder=" " step="100" min="500">
+        <input type="number" name="amount" required placeholder=" " step="0.01" min="0.01"
+          value="<?php echo isset($_POST['amount']) ? htmlspecialchars($_POST['amount']) : ''; ?>">
         <span>Amount (MWK)</span>
       </label>
 
       <label>
         <select name="payment_method" required>
           <option value="" disabled selected>Select method</option>
-          <option value="cash">Cash</option>
-          <option value="mobile_money">Mobile Money</option>
-          <option value="bank">Bank Transfer</option>
-          <option value="card">Credit/Debit Card</option>
+          <option value="cash" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'cash') ? 'selected' : ''; ?>>Cash</option>
+          <option value="mobile_money" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'mobile_money') ? 'selected' : ''; ?>>Mobile Money</option>
+          <option value="bank" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'bank') ? 'selected' : ''; ?>>Bank Transfer</option>
+          <option value="card" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'card') ? 'selected' : ''; ?>>Credit/Debit Card</option>
         </select>
         <span>Payment Method</span>
       </label>

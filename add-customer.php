@@ -4,38 +4,65 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// DB connection
+// DB connection and security
 require_once 'db-connection.php';
+require_once 'auth-helper.php';
 
 $success = "";
 $error = "";
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $first_name = trim($_POST["first_name"]);
-    $last_name = trim($_POST["last_name"]);
-    $email = trim($_POST["email"]);
-    $phone = trim($_POST["phone"]);
-    $address = trim($_POST["address"]);
-    $status = "pending";
+    try {
+        // Validate CSRF token
+        validateFormToken();
 
-    if (empty($first_name) || empty($last_name) || empty($email) || empty($phone)) {
-        $error = "All fields are required.";
-    } elseif (!preg_match('/^(?:\+265|0)\d{9}$/', $phone)) {
-        $error = "Invalid phone number. It must start with +265 or 0 and contain exactly 10 digits after.";
-    } else {
-        $check = $conn->query("SELECT id FROM customers WHERE email='$email' OR phone='$phone'");
-        if ($check->num_rows > 0) {
-            $error = "A customer with this email or phone already exists.";
-        } else {
-            $stmt = $conn->prepare("INSERT INTO customers (first_name, last_name, email, phone, address, status) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssssss", $first_name, $last_name, $email, $phone, $address, $status);
-            if ($stmt->execute()) {
-                $success = "Customer submitted successfully. Awaiting admin approval.";
-            } else {
-                $error = "Error saving customer.";
-            }
+        // Sanitize inputs
+        $first_name = secureFormInput($_POST["first_name"]);
+        $last_name = secureFormInput($_POST["last_name"]);
+        $email = secureFormInput($_POST["email"]);
+        $phone = secureFormInput($_POST["phone"]);
+        $address = secureFormInput($_POST["address"]);
+        $status = "pending";
+
+        // Validate inputs
+        if (empty($first_name) || empty($last_name) || empty($email) || empty($phone)) {
+            throw new Exception("All fields are required.");
         }
+
+        if (!validateEmail($email)) {
+            throw new Exception("Please enter a valid email address.");
+        }
+
+        if (!validatePhone($phone)) {
+            throw new Exception("Invalid phone number. It must start with +265 or 0 and contain exactly 9 digits after.");
+        }
+
+        // Check for existing customer
+        $check = $conn->prepare("SELECT id FROM customers WHERE email=? OR phone=?");
+        $check->bind_param("ss", $email, $phone);
+        $check->execute();
+        $check_result = $check->get_result();
+
+        if ($check_result->num_rows > 0) {
+            throw new Exception("A customer with this email or phone already exists.");
+        }
+
+        $check->close();
+
+        // Insert customer
+        $stmt = $conn->prepare("INSERT INTO customers (first_name, last_name, email, phone, address, status) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssss", $first_name, $last_name, $email, $phone, $address, $status);
+
+        if ($stmt->execute()) {
+            $success = "Customer submitted successfully. Awaiting admin approval.";
+        } else {
+            throw new Exception("Error saving customer: " . $conn->error);
+        }
+
+        $stmt->close();
+    } catch (Exception $e) {
+        $error = $e->getMessage();
     }
 }
 
@@ -68,30 +95,38 @@ $recent_customers = $conn->query("SELECT first_name, last_name, email, phone FRO
             <p class="title">Add Customer</p>
             <p class="message">Fill in the details below</p>
 
+            <?php echo getFormTokenField(); ?>
+
             <div class="form-group">
                 <label>
-                    <input type="text" name="first_name" required placeholder=" " maxlength="50">
+                    <input type="text" name="first_name" required placeholder=" " maxlength="50"
+                        value="<?php echo isset($_POST['first_name']) ? htmlspecialchars($_POST['first_name']) : ''; ?>">
                     <span>First Name</span>
                 </label>
                 <label>
-                    <input type="text" name="last_name" required placeholder=" " maxlength="50">
+                    <input type="text" name="last_name" required placeholder=" " maxlength="50"
+                        value="<?php echo isset($_POST['last_name']) ? htmlspecialchars($_POST['last_name']) : ''; ?>">
                     <span>Last Name</span>
                 </label>
             </div>
 
             <label>
-                <input type="email" name="email" required placeholder=" " maxlength="100">
+                <input type="email" name="email" required placeholder=" " maxlength="100"
+                    value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
                 <span>Email</span>
             </label>
 
             <label>
-                <input type="tel" name="phone" required placeholder=" " maxlength="13" pattern="^(?:\+265|0)\d{9}$"
-                    title="Phone number must start with +265 or 0 and contain exactly 9 digits after.">
+                <input type="tel" name="phone" required placeholder=" " maxlength="13"
+                    pattern="^(?:\+265|0)\d{9}$"
+                    title="Phone number must start with +265 or 0 and contain exactly 9 digits after."
+                    value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>">
                 <span>Phone</span>
             </label>
 
             <label>
-                <input type="text" name="address" placeholder=" " maxlength="255">
+                <input type="text" name="address" placeholder=" " maxlength="255"
+                    value="<?php echo isset($_POST['address']) ? htmlspecialchars($_POST['address']) : ''; ?>">
                 <span>Address</span>
             </label>
 
@@ -123,8 +158,6 @@ $recent_customers = $conn->query("SELECT first_name, last_name, email, phone FRO
     <footer>
         <?php include 'footer.php' ?>
     </footer>
-
-
 </body>
 
 </html>

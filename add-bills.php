@@ -4,38 +4,61 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// database connection 
+// database connection and security
 require_once 'db-connection.php';
+require_once 'auth-helper.php';
 
 $success = "";
 $error = "";
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $customer_id = $conn->real_escape_string($_POST['customer_id']);
-    $amount = $conn->real_escape_string($_POST['amount']);
-    $description = $conn->real_escape_string($_POST['description']);
+    try {
+        // Validate CSRF token
+        validateFormToken();
 
-    // Validate inputs
-    if (empty($customer_id)) {
-        $error = "Customer selection is required.";
-    } elseif (!is_numeric($amount) || $amount <= 0) {
-        $error = "Amount must be a positive number.";
-    } else {
-        // Check customer exists
-        $check = $conn->query("SELECT id FROM customers WHERE id='$customer_id' AND status='approved'");
-        if ($check->num_rows == 0) {
-            $error = "Selected customer is not approved or doesn't exist.";
-        } else {
-            $stmt = $conn->prepare("INSERT INTO bills (customer_id, amount, description) VALUES (?, ?, ?)");
-            $stmt->bind_param("ids", $customer_id, $amount, $description);
-            if ($stmt->execute()) {
-                $success = "Bill added successfully!";
-            } else {
-                $error = "Error saving bill: " . $conn->error;
-            }
-            $stmt->close();
+        // Sanitize inputs
+        $customer_id = intval($_POST['customer_id']);
+        $amount = floatval($_POST['amount']);
+        $description = secureFormInput($_POST['description']);
+
+        // Validate inputs
+        if (empty($customer_id)) {
+            throw new Exception("Customer selection is required.");
         }
+
+        if (!validateAmount($amount)) {
+            throw new Exception("Amount must be a positive number.");
+        }
+
+        if (empty($description)) {
+            throw new Exception("Description is required.");
+        }
+
+        // Check customer exists and is approved
+        $check = $conn->prepare("SELECT id FROM customers WHERE id=? AND status='approved'");
+        $check->bind_param("i", $customer_id);
+        $check->execute();
+        $check_result = $check->get_result();
+
+        if ($check_result->num_rows == 0) {
+            throw new Exception("Selected customer is not approved or doesn't exist.");
+        }
+        $check->close();
+
+        // Insert bill
+        $stmt = $conn->prepare("INSERT INTO bills (customer_id, amount, description) VALUES (?, ?, ?)");
+        $stmt->bind_param("ids", $customer_id, $amount, $description);
+
+        if ($stmt->execute()) {
+            $success = "Bill added successfully!";
+        } else {
+            throw new Exception("Error saving bill: " . $conn->error);
+        }
+
+        $stmt->close();
+    } catch (Exception $e) {
+        $error = $e->getMessage();
     }
 }
 
@@ -84,27 +107,34 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
 
     <!-- Left: Add Bill Form -->
     <section class="form-section">
-        <form class="form" action="add-bill.php" method="POST">
+        <form class="form" action="add-bills.php" method="POST">
             <p class="title">Add Bill</p>
             <p class="message">Fill in the details below</p>
+
+            <?php echo getFormTokenField(); ?>
 
             <label>
                 <select id="customer_id" name="customer_id" required style="width:100%">
                     <option value="">Select Customer</option>
                     <?php while ($cust = $customers->fetch_assoc()): ?>
                         <?php $name = htmlspecialchars($cust['first_name'] . " " . $cust['last_name']); ?>
-                        <option value="<?php echo $cust['id']; ?>"><?php echo $name; ?></option>
+                        <option value="<?php echo $cust['id']; ?>"
+                            <?php echo (isset($_POST['customer_id']) && $_POST['customer_id'] == $cust['id']) ? 'selected' : ''; ?>>
+                            <?php echo $name; ?>
+                        </option>
                     <?php endwhile; ?>
                 </select>
             </label>
 
             <label>
-                <input type="number" name="amount" required placeholder=" " step="100" min="500">
+                <input type="number" name="amount" required placeholder=" " step="0.01" min="0.01"
+                    value="<?php echo isset($_POST['amount']) ? htmlspecialchars($_POST['amount']) : ''; ?>">
                 <span>Amount (MWK)</span>
             </label>
 
             <label>
-                <input type="text" name="description" required placeholder=" " maxlength="50">
+                <input type="text" name="description" required placeholder=" " maxlength="255"
+                    value="<?php echo isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?>">
                 <span>Description</span>
             </label>
 
