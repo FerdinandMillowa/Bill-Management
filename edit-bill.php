@@ -8,29 +8,45 @@ if (!isset($_SESSION['admin_logged_in'])) {
 // Database connection
 require_once 'db-connection.php';
 
-$bill_id = isset($_GET['id']) ? $conn->real_escape_string($_GET['id']) : null;
+$bill_id = isset($_GET['id']) ? intval($_GET['id']) : null;
 $bill_data = null;
 
 if ($bill_id) {
-    // Fetch bill data
-    $sql = "SELECT * FROM bills WHERE id = '$bill_id'";
-    $result = $conn->query($sql);
+    // Fetch bill data using prepared statement
+    $stmt = $conn->prepare("SELECT * FROM bills WHERE id = ?");
+    $stmt->bind_param("i", $bill_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
     $bill_data = $result->fetch_assoc();
+    $stmt->close();
 }
 
 // Update bill logic
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $bill_name = $conn->real_escape_string($_POST['bill_name']);
-    $amount = $conn->real_escape_string($_POST['amount']);
-    $description = $conn->real_escape_string($_POST['description']);
+    $bill_name = trim($_POST['bill_name']);
+    $amount = floatval($_POST['amount']);
+    $description = trim($_POST['description']);
 
-    // Update the bill
-    $update_sql = "UPDATE bills SET bill_name='$bill_name', amount='$amount', description='$description' WHERE id='$bill_id'";
-
-    if ($conn->query($update_sql) === TRUE) {
-        echo "Bill updated successfully.";
+    // Validate inputs
+    if (empty($bill_name) || $amount <= 0) {
+        $error = "Invalid bill data provided.";
     } else {
-        echo "Error: " . $conn->error;
+        // Update the bill using prepared statement
+        $stmt = $conn->prepare("UPDATE bills SET bill_name=?, amount=?, description=? WHERE id=?");
+        $stmt->bind_param("sdsi", $bill_name, $amount, $description, $bill_id);
+
+        if ($stmt->execute()) {
+            $success = "Bill updated successfully.";
+            // Refresh bill data
+            $stmt = $conn->prepare("SELECT * FROM bills WHERE id = ?");
+            $stmt->bind_param("i", $bill_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $bill_data = $result->fetch_assoc();
+        } else {
+            $error = "Error updating bill: " . $conn->error;
+        }
+        $stmt->close();
     }
 }
 ?>
@@ -47,18 +63,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <body>
     <h2>Edit Bill</h2>
-    <form action="edit-bill.php?id=<?php echo $bill_id; ?>" method="POST">
-        <label for="bill-name">Bill Name:</label>
-        <input type="text" id="bill-name" name="bill_name" value="<?php echo $bill_data['bill_name']; ?>" required>
 
-        <label for="amount">Amount:</label>
-        <input type="number" id="amount" name="amount" value="<?php echo $bill_data['amount']; ?>" required>
+    <?php if (isset($success)): ?>
+        <div style="color: green; margin: 10px 0;"><?php echo $success; ?></div>
+    <?php elseif (isset($error)): ?>
+        <div style="color: red; margin: 10px 0;"><?php echo $error; ?></div>
+    <?php endif; ?>
 
-        <label for="description">Description:</label>
-        <textarea id="description" name="description"><?php echo $bill_data['description']; ?></textarea>
+    <?php if ($bill_data): ?>
+        <form action="edit-bill.php?id=<?php echo $bill_id; ?>" method="POST">
+            <label for="bill-name">Bill Name:</label>
+            <input type="text" id="bill-name" name="bill_name" value="<?php echo htmlspecialchars($bill_data['bill_name']); ?>" required>
 
-        <input type="submit" value="Update Bill">
-    </form>
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" name="amount" value="<?php echo htmlspecialchars($bill_data['amount']); ?>" step="0.01" min="0" required>
+
+            <label for="description">Description:</label>
+            <textarea id="description" name="description"><?php echo htmlspecialchars($bill_data['description']); ?></textarea>
+
+            <input type="submit" value="Update Bill">
+        </form>
+    <?php else: ?>
+        <p>Bill not found.</p>
+    <?php endif; ?>
 </body>
 
 </html>

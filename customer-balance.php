@@ -8,9 +8,10 @@ if (!isset($_SESSION['admin_logged_in'])) {
 // Database connection
 require_once 'db-connection.php';
 
-// Fetch all approved customers
-$sql = "SELECT id, name FROM customers WHERE approved = 1";
-$result = $conn->query($sql);
+// Fetch all approved customers using prepared statement
+$stmt = $conn->prepare("SELECT id, first_name, last_name FROM customers WHERE status = 'approved'");
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -32,7 +33,8 @@ $result = $conn->query($sql);
             <?php
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
-                    echo "<option value='{$row['id']}'>{$row['name']}</option>";
+                    $full_name = htmlspecialchars($row['first_name'] . " " . $row['last_name']);
+                    echo "<option value='{$row['id']}'>{$full_name}</option>";
                 }
             } else {
                 echo "<option value=''>No approved customers available</option>";
@@ -44,24 +46,30 @@ $result = $conn->query($sql);
 
     <?php
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['customer_id'])) {
-        $customer_id = $conn->real_escape_string($_POST['customer_id']);
+        $customer_id = intval($_POST['customer_id']);
 
-        // Get total amount from bills
-        $total_bills_sql = "SELECT SUM(amount) AS total_bills FROM bills WHERE customer_id = '$customer_id'";
-        $total_bills_result = $conn->query($total_bills_sql);
-        $total_bills = $total_bills_result->fetch_assoc()['total_bills'];
+        // Get total amount from bills using prepared statement
+        $bills_stmt = $conn->prepare("SELECT SUM(amount) AS total_bills FROM bills WHERE customer_id = ?");
+        $bills_stmt->bind_param("i", $customer_id);
+        $bills_stmt->execute();
+        $total_bills_result = $bills_stmt->get_result();
+        $total_bills = $total_bills_result->fetch_assoc()['total_bills'] ?? 0;
+        $bills_stmt->close();
 
-        // Get total payments made
-        $total_payments_sql = "SELECT SUM(amount) AS total_payments FROM payments WHERE customer_id = '$customer_id'";
-        $total_payments_result = $conn->query($total_payments_sql);
-        $total_payments = $total_payments_result->fetch_assoc()['total_payments'];
+        // Get total payments made using prepared statement
+        $payments_stmt = $conn->prepare("SELECT SUM(amount) AS total_payments FROM payments WHERE customer_id = ?");
+        $payments_stmt->bind_param("i", $customer_id);
+        $payments_stmt->execute();
+        $total_payments_result = $payments_stmt->get_result();
+        $total_payments = $total_payments_result->fetch_assoc()['total_payments'] ?? 0;
+        $payments_stmt->close();
 
         $outstanding_balance = $total_bills - $total_payments;
 
         echo "<h3>Balance Summary</h3>";
-        echo "<p>Total Bills: " . ($total_bills ? $total_bills : 0) . "</p>";
-        echo "<p>Total Payments: " . ($total_payments ? $total_payments : 0) . "</p>";
-        echo "<p>Outstanding Balance: " . ($outstanding_balance > 0 ? $outstanding_balance : 0) . "</p>";
+        echo "<p>Total Bills: MWK " . number_format($total_bills, 2) . "</p>";
+        echo "<p>Total Payments: MWK " . number_format($total_payments, 2) . "</p>";
+        echo "<p>Outstanding Balance: MWK " . number_format(max($outstanding_balance, 0), 2) . "</p>";
         echo "<p>Status: " . ($outstanding_balance > 0 ? "Outstanding" : "Settled") . "</p>";
     }
     ?>
