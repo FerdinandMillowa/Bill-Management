@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Check customer exists and is approved
-    $check = $conn->prepare("SELECT id FROM customers WHERE id=? AND status='approved'");
+    $check = $conn->prepare("SELECT id, first_name, last_name FROM customers WHERE id=? AND status='approved'");
     $check->bind_param("i", $customer_id);
     $check->execute();
     $check_result = $check->get_result();
@@ -44,17 +44,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($check_result->num_rows == 0) {
       throw new Exception("Selected customer is not approved or doesn't exist.");
     }
+
+    $customer = $check_result->fetch_assoc();
     $check->close();
 
-    // Insert payment
+    // Insert payment (no bill_id needed)
     $stmt = $conn->prepare("INSERT INTO payments (customer_id, amount, payment_method) VALUES (?, ?, ?)");
     $stmt->bind_param("ids", $customer_id, $amount, $payment_method);
 
     if ($stmt->execute()) {
-      $success = "Payment recorded successfully!";
-
-      // Update bill status if full amount paid (optional enhancement)
-      // $conn->query("UPDATE bills SET status='paid' WHERE customer_id='$customer_id' AND status='unpaid'");
+      $customer_name = $customer['first_name'] . " " . $customer['last_name'];
+      $success = "Payment of MWK " . number_format($amount, 2) . " recorded successfully for $customer_name!";
     } else {
       throw new Exception("Error saving payment: " . $conn->error);
     }
@@ -80,7 +80,7 @@ $recent_payments = $conn->query("
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Payment</title>
+  <title>Record Payment</title>
   <link rel="stylesheet" href="css/add-customer.css">
   <link rel="stylesheet" href="css/index.css">
   <link rel="stylesheet" href="css/reports.css">
@@ -88,11 +88,55 @@ $recent_payments = $conn->query("
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <style>
+    .customer-info {
+      background: #2c3e48;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      display: none;
+      border-left: 4px solid #1ab188;
+    }
+
+    .balance-positive {
+      color: #f44336;
+      font-weight: bold;
+    }
+
+    .balance-zero {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+
+    .balance-negative {
+      color: #ff9800;
+      font-weight: bold;
+    }
+  </style>
   <script>
     $(document).ready(function() {
       $('#customer_id').select2({
         placeholder: "Select customer",
         width: '100%'
+      });
+
+      // Show customer balance when customer is selected
+      $('#customer_id').on('change', function() {
+        const customerId = $(this).val();
+        if (customerId) {
+          $.ajax({
+            url: 'get-customer-balance.php',
+            type: 'POST',
+            data: {
+              customer_id: customerId
+            },
+            success: function(response) {
+              $('.customer-info').show().html(response);
+            }
+          });
+        } else {
+          $('.customer-info').hide();
+        }
       });
     });
   </script>
@@ -108,11 +152,11 @@ $recent_payments = $conn->query("
     <?php endif; ?>
   </header>
 
-  <!-- Left: Add Payment Form -->
+  <!-- Payment Form -->
   <section class="form-section">
     <form class="form" action="add-payments.php" method="POST">
       <p class="title">Record Payment</p>
-      <p class="message">Fill in the payment details</p>
+      <p class="message">Select customer and enter payment details</p>
 
       <?php echo getFormTokenField(); ?>
 
@@ -120,7 +164,7 @@ $recent_payments = $conn->query("
         <select id="customer_id" name="customer_id" required style="width:100%">
           <option value="">Select Customer</option>
           <?php
-          $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE status='approved'");
+          $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE status='approved' ORDER BY first_name, last_name");
           while ($cust = $customers->fetch_assoc()):
             $name = htmlspecialchars($cust['first_name'] . " " . $cust['last_name']);
             $selected = (isset($_POST['customer_id']) && $_POST['customer_id'] == $cust['id']) ? 'selected' : '';
@@ -130,6 +174,11 @@ $recent_payments = $conn->query("
         </select>
         <span>Customer</span>
       </label>
+
+      <!-- Customer Balance Info -->
+      <div class="customer-info">
+        <!-- Balance will be loaded here via AJAX -->
+      </div>
 
       <label>
         <input type="number" name="amount" required placeholder=" " step="0.01" min="0.01"
@@ -153,7 +202,7 @@ $recent_payments = $conn->query("
     </form>
   </section>
 
-  <!-- Right: Recent Payments -->
+  <!-- Recent Payments -->
   <section class="list-section">
     <div class="customer-list">
       <h3>Recent Payments</h3>
