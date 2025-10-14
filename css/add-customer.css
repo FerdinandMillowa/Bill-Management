@@ -1,208 +1,676 @@
-/* Add Customer Form Styling */
+/* ===================================
+   ADD CUSTOMER & FORMS - OPTIMIZED
+   Using CSS variables from index.css
+   =================================== */
 
-header {
-    grid-area: header;
-    width: 100%;
-}
-
-footer {
-    grid-area: footer;
-    width: 100%;
-}
-
-body {
+/* ===================================
+   GRID LAYOUT
+   =================================== */
+   body {
     display: grid;
     grid-template-areas: 
-        "header header"
-        "form list"
-        "footer footer";
+      "header header"
+      "form list"
+      "footer footer";
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    padding: 20px;
-}
-
-.form-section {
+    gap: var(--spacing-xl, 20px);
+    padding: var(--spacing-xl, 20px);
+    min-height: 100vh;
+  }
+  
+  header {
+    grid-area: header;
+    width: 100%;
+  }
+  
+  footer {
+    grid-area: footer;
+    width: 100%;
+  }
+  
+  /* ===================================
+     SECTIONS
+     =================================== */
+  .form-section,
+  .list-section {
+    background: var(--bg-dark, #24323d);
+    border-radius: var(--radius-xl, 20px);
+    padding: var(--spacing-xl, 25px);
+    color: var(--text-white, #fff);
+    height: fit-content;
+    box-shadow: var(--shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+    transition: box-shadow var(--transition-base, 0.2s ease);
+  }
+  
+  .form-section {
     grid-area: form;
-    background: #24323d;
-    border-radius: 20px;
-    padding: 20px;
-    color: #fff;
-    height: fit-content;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-}
-
-.list-section {
+  }
+  
+  .list-section {
     grid-area: list;
-    background: #24323d;
-    border-radius: 20px;
-    padding: 20px;
-    color: #fff;
-    height: fit-content;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.customer-list h3 {
-    color: #1ab188;
-    margin: 0 0 20px 0;
-    margin-bottom: 15px;
-    font-size: 24px;
+  }
+  
+  .form-section:hover,
+  .list-section:hover {
+    box-shadow: var(--shadow-lg, 0 8px 16px rgba(0, 0, 0, 0.15));
+  }
+  
+  /* ===================================
+     FORM STYLING
+     =================================== */
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 15px);
+  }
+  
+  .title {
+    color: var(--color-accent, #1ab188);
+    font-size: clamp(1.5rem, 4vw, 1.75rem);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: var(--spacing-sm, 8px);
+  }
+  
+  .message {
+    font-size: var(--font-size-sm, 14px);
+    text-align: center;
+    color: var(--text-light, #e0e0e0);
+    margin-bottom: var(--spacing-md, 10px);
+  }
+  
+  .signin {
+    font-size: var(--font-size-sm, 14px);
+    text-align: center;
+    margin-top: var(--spacing-sm, 8px);
+    color: var(--text-light, #e0e0e0);
+  }
+  
+  .signin a {
+    color: var(--color-accent, #1ab188);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all var(--transition-base, 0.2s ease);
+    border-bottom: 1px solid transparent;
+  }
+  
+  .signin a:hover,
+  .signin a:focus {
+    color: var(--color-accent-hover, #1ec79a);
+    text-decoration: none;
+    border-bottom-color: var(--color-accent-hover, #1ec79a);
+  }
+  
+  /* ===================================
+     FORM GROUPS
+     =================================== */
+  .form-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md, 15px);
+    width: 100%;
+  }
+  
+  .form-group label {
+    width: 100%;
+  }
+  
+  /* ===================================
+     FORM LABELS & INPUTS
+     =================================== */
+  .form label {
+    position: relative;
+    display: block;
+    width: 100%;
+  }
+  
+  .form label input,
+  .form label select,
+  .form label textarea {
+    width: 100%;
+    padding: var(--spacing-md, 12px) var(--spacing-md, 12px) var(--spacing-lg, 20px);
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg, 10px);
+    outline: none;
+    background: var(--bg-white, #fff);
+    font-size: var(--font-size-base, 1rem);
+    transition: all var(--transition-base, 0.2s ease);
+    font-family: inherit;
+  }
+  
+  .form label input:focus,
+  .form label select:focus,
+  .form label textarea:focus {
+    border-color: var(--color-accent, #1ab188);
+    box-shadow: 0 0 0 3px rgba(26, 177, 136, 0.1);
+  }
+  
+  /* Floating Label Animation */
+  .form label input + span,
+  .form label textarea + span {
+    position: absolute;
+    top: 15px;
+    left: var(--spacing-md, 12px);
+    color: var(--text-secondary, #777);
+    font-size: 0.9em;
+    transition: all var(--transition-slow, 0.3s ease);
+    pointer-events: none;
+    background: var(--bg-white, #fff);
+    padding: 0 var(--spacing-xs, 4px);
+  }
+  
+  .form label input:focus + span,
+  .form label input:not(:placeholder-shown) + span,
+  .form label textarea:focus + span,
+  .form label textarea:not(:placeholder-shown) + span {
+    top: -8px;
+    left: var(--spacing-sm, 8px);
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--color-accent, #1ab188);
+  }
+  
+  .form label input:valid + span {
+    color: var(--color-accent, #1ab188);
+  }
+  
+  /* Select2 & Select Styling */
+  .form label select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--spacing-md, 12px) center;
+    padding-right: var(--spacing-2xl, 40px);
+    cursor: pointer;
+  }
+  
+  .form label select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231ab188' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  }
+  
+  /* Input States */
+  .form label input.error,
+  .form label select.error,
+  .form label textarea.error {
+    border-color: var(--color-error, #f44336);
+  }
+  
+  .form label input:disabled,
+  .form label select:disabled,
+  .form label textarea:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  
+  /* Field Error Messages */
+  .field-error {
+    color: var(--color-error, #f44336);
+    font-size: 0.75rem;
+    margin-top: var(--spacing-xs, 4px);
+    font-weight: 500;
+    display: block;
+    animation: slideDown var(--transition-base, 0.2s ease);
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* ===================================
+     SUBMIT BUTTON
+     =================================== */
+  .submit {
+    border: none;
+    background: var(--color-accent, #1ab188);
+    padding: var(--spacing-md, 12px) var(--spacing-xl, 24px);
+    border-radius: var(--radius-lg, 10px);
+    color: var(--text-white, #fff);
+    font-size: var(--font-size-base, 16px);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base, 0.2s ease);
+    margin-top: var(--spacing-sm, 8px);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 100%);
+    opacity: 0;
+    transition: opacity var(--transition-base, 0.2s ease);
+  }
+  
+  .submit:hover::before,
+  .submit:focus::before {
+    opacity: 1;
+  }
+  
+  .submit:hover,
+  .submit:focus {
+    background: var(--color-accent-hover, #1ec79a);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(26, 177, 136, 0.3);
+  }
+  
+  .submit:active {
+    transform: translateY(0);
+  }
+  
+  .submit:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .submit:focus-visible {
+    outline: 2px solid var(--color-accent, #1ab188);
+    outline-offset: 2px;
+  }
+  
+  /* ===================================
+     MESSAGES
+     =================================== */
+  .success-message,
+  .error-message {
+    font-weight: 600;
+    margin: var(--spacing-md, 10px) 0;
+    padding: var(--spacing-md, 12px) var(--spacing-lg, 18px);
+    border-radius: var(--radius-md, 8px);
+    font-size: var(--font-size-base, 16px);
+    animation: slideDown var(--transition-slow, 0.3s ease);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+  }
+  
+  .success-message {
+    color: var(--color-success, #4CAF50);
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 4px solid var(--color-success, #4CAF50);
+  }
+  
+  .error-message {
+    color: var(--color-error, #f44336);
+    background: rgba(244, 67, 54, 0.1);
+    border-left: 4px solid var(--color-error, #f44336);
+  }
+  
+  /* ===================================
+     CUSTOMER LIST
+     =================================== */
+  .customer-list h3 {
+    color: var(--color-accent, #1ab188);
+    margin: 0 0 var(--spacing-lg, 20px);
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
     font-weight: 600;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid #1ab188;
-    padding-bottom: 8px;
-}
-
-.customer-list ul {
+    border-bottom: 2px solid var(--color-accent, #1ab188);
+    padding-bottom: var(--spacing-sm, 8px);
+  }
+  
+  .customer-list ul {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-}
-
-.customer-list li {
-    background: #2c3e48;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    transition: transform 0.2s;
-}
-
-.customer-list li:hover {
-    transform: translateX(5px);
-    background: #344955;
-}
-
-.customer-list li strong {
-    color: #1ab188;
-    display: block;
-    /* margin-bottom: 5px; */
-}
-
-.customer-list li span {
-    display: block;
-    margin-top: 3px;
-    color: #e0e0e0;
-    font-size: 14px;
-}
-/* Add this to improve the layout spacing */
-.form-section, .list-section {
-    padding: 25px;
-    box-sizing: border-box;
-    margin: 10px;
-    padding: 25px;
-}
-
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: #24323d;
-    padding: 20px;
-    border-radius: 20px;
-    color: #fff;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.title {
-    color: #1ab188;
-    font-size: 28px;
-    font-weight: 600;
-    text-align: center;
-}
-
-.message, .signin {
-    font-size: 14px;
-    text-align: center;
-}
-
-.signin a {
-    color: #1ab188;
-    text-decoration: none;
-}
-
-.signin a:hover {
-    text-decoration: underline;
-    color: #1ec79a;
-}
-
-.form-group {
-    display: flex;
-    gap: 200px;
-    width: 100%;
-}
-.form-group label {
-    padding: auto;
-    width: 100%;
-    
-}
-
-.form-group input {
-    width: 100%;
-}
-
-.form label {
+    gap: var(--spacing-md, 12px);
+  }
+  
+  .customer-list li {
+    background: var(--bg-darker, #2c3e48);
+    padding: var(--spacing-lg, 15px);
+    border-radius: var(--radius-md, 8px);
+    transition: all var(--transition-base, 0.2s ease);
+    border-left: 3px solid transparent;
     position: relative;
-    display: block;
-    /* margin-left: 0px;
-    margin-right: 10px; */
-}
-
-.form label input {
-    width: 100%;
-    padding: 10px 10px 20px 10px;
-    border: none;
-    border-radius: 10px;
-    outline: none;
-}
-
-.form label input + span {
+    overflow: hidden;
+  }
+  
+  .customer-list li::before {
+    content: '';
     position: absolute;
-    top: 15px;
-    left: 0px;
-    color: #24323d;
-    font-size: 0.9em;
-    transition: 0.3s ease;
-    pointer-events: none;
-}
-
-.form label input:focus + span,
-.form label input:not(:placeholder-shown) + span {
-    top: 30px;
-    font-size: 0.7em;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--color-accent, #1ab188);
+    transform: scaleY(0);
+    transition: transform var(--transition-base, 0.2s ease);
+  }
+  
+  .customer-list li:hover,
+  .customer-list li:focus-within {
+    transform: translateX(5px);
+    background: var(--bg-darkest, #344955);
+    box-shadow: var(--shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+  }
+  
+  .customer-list li:hover::before,
+  .customer-list li:focus-within::before {
+    transform: scaleY(1);
+  }
+  
+  .customer-list li strong {
+    color: var(--color-accent, #1ab188);
+    display: block;
+    font-size: var(--font-size-base, 1rem);
+    margin-bottom: var(--spacing-xs, 4px);
     font-weight: 600;
-}
-
-.form label input:valid + span {
-    color: #1ab188;
-}
-
-.submit {
-    border: none;
-    background: #1ab188;
-    padding: 10px;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.submit:hover {
-    background: #1ec79a;
-}
-
-.success-message{
-    color: green;
-    font-weight: bold;
-    margin-top: 10px;
-    font-size: 16px;
-}
-
-.error-message{
-    color: red;
-    font-weight: bold;
-    margin-top: 10px;
-    font-size: 16px;
-}
+  }
+  
+  .customer-list li span,
+  .customer-list li small {
+    display: block;
+    margin-top: var(--spacing-xs, 3px);
+    color: var(--text-light, #e0e0e0);
+    font-size: var(--font-size-sm, 14px);
+    line-height: 1.5;
+  }
+  
+  .customer-list li small {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: var(--spacing-sm, 8px);
+  }
+  
+  /* Empty State */
+  .customer-list li:only-child:not(:has(strong)) {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    padding: var(--spacing-xl, 24px);
+  }
+  
+  /* ===================================
+     CUSTOMER INFO (Payment Page)
+     =================================== */
+  .customer-info {
+    background: var(--bg-darker, #2c3e48);
+    padding: var(--spacing-lg, 15px);
+    border-radius: var(--radius-md, 8px);
+    margin: var(--spacing-lg, 15px) 0;
+    display: none;
+    border-left: 4px solid var(--color-accent, #1ab188);
+    animation: slideDown var(--transition-slow, 0.3s ease);
+  }
+  
+  .customer-info.show {
+    display: block;
+  }
+  
+  .balance-positive {
+    color: var(--color-error, #f44336);
+    font-weight: 700;
+  }
+  
+  .balance-zero {
+    color: var(--color-success, #4CAF50);
+    font-weight: 700;
+  }
+  
+  .balance-negative {
+    color: var(--color-warning, #ff9800);
+    font-weight: 700;
+  }
+  
+  /* ===================================
+     RESPONSIVE - TABLET
+     =================================== */
+  @media (max-width: 992px) {
+    body {
+      grid-template-areas: 
+        "header"
+        "form"
+        "list"
+        "footer";
+      grid-template-columns: 1fr;
+      gap: var(--spacing-lg, 20px);
+      padding: var(--spacing-md, 15px);
+    }
+  
+    .form-group {
+      grid-template-columns: 1fr;
+      gap: var(--spacing-md, 12px);
+    }
+  
+    .form-section,
+    .list-section {
+      padding: var(--spacing-lg, 20px);
+    }
+  }
+  
+  /* ===================================
+     RESPONSIVE - MOBILE
+     =================================== */
+  @media (max-width: 576px) {
+    body {
+      padding: var(--spacing-sm, 10px);
+      gap: var(--spacing-md, 15px);
+    }
+  
+    .form-section,
+    .list-section {
+      padding: var(--spacing-md, 15px);
+      border-radius: var(--radius-md, 12px);
+    }
+  
+    .title {
+      font-size: 1.5rem;
+    }
+  
+    .form label input,
+    .form label select,
+    .form label textarea {
+      padding: var(--spacing-sm, 10px) var(--spacing-sm, 10px) var(--spacing-md, 15px);
+      font-size: 0.9rem;
+    }
+  
+    .form label input + span,
+    .form label textarea + span {
+      font-size: 0.85em;
+      left: var(--spacing-sm, 10px);
+    }
+  
+    .submit {
+      padding: var(--spacing-md, 12px);
+      font-size: 0.95rem;
+    }
+  
+    .customer-list li {
+      padding: var(--spacing-md, 12px);
+    }
+  
+    .customer-list h3 {
+      font-size: 1.25rem;
+    }
+  }
+  
+  /* ===================================
+     ACCESSIBILITY - FOCUS STATES
+     =================================== */
+  .form label:focus-within {
+    outline: 2px solid var(--color-accent, #1ab188);
+    outline-offset: 2px;
+    border-radius: var(--radius-lg, 10px);
+  }
+  
+  /* Skip focus outline for mouse users */
+  .form label input:focus:not(:focus-visible),
+  .form label select:focus:not(:focus-visible),
+  .form label textarea:focus:not(:focus-visible) {
+    box-shadow: none;
+  }
+  
+  /* ===================================
+     LOADING STATE
+     =================================== */
+  .form.loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  
+  .form.loading .submit::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: var(--text-white, #fff);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-left: var(--spacing-sm, 8px);
+    top: 50%;
+    right: var(--spacing-lg, 20px);
+    transform: translateY(-50%);
+  }
+  
+  @keyframes spin {
+    to { transform: translateY(-50%) rotate(360deg); }
+  }
+  
+  /* ===================================
+     PRINT STYLES
+     =================================== */
+  @media print {
+    body {
+      grid-template-areas: 
+        "header"
+        "list"
+        "form";
+      grid-template-columns: 1fr;
+      background: white;
+      padding: 0;
+    }
+  
+    .form-section,
+    .list-section {
+      background: white;
+      color: black;
+      box-shadow: none;
+      border: 1px solid #ccc;
+      page-break-inside: avoid;
+      margin-bottom: 1cm;
+    }
+  
+    .form,
+    .submit,
+    .signin,
+    .message {
+      display: none;
+    }
+  
+    .title {
+      color: black;
+      border-bottom: 2px solid black;
+      padding-bottom: 0.5cm;
+    }
+  
+    .customer-list li {
+      background: white;
+      color: black;
+      border: 1px solid #ddd;
+      margin-bottom: 0.5cm;
+      page-break-inside: avoid;
+    }
+  
+    .customer-list li:hover {
+      transform: none;
+    }
+  
+    .customer-list li strong {
+      color: black;
+    }
+  
+    .customer-list li span,
+    .customer-list li small {
+      color: #333;
+    }
+  
+    .customer-list h3 {
+      color: black;
+    }
+  
+    .success-message,
+    .error-message {
+      border: 1px solid;
+      background: white !important;
+    }
+  
+    @page {
+      margin: 2cm;
+      size: A4;
+    }
+  }
+  
+  /* ===================================
+     DARK MODE SUPPORT (Optional)
+     =================================== */
+  @media (prefers-color-scheme: dark) {
+    /* Already using dark theme, but can adjust if needed */
+    .form label input,
+    .form label select,
+    .form label textarea {
+      background: var(--bg-white, #fff);
+      color: var(--text-primary, #000);
+    }
+  }
+  
+  /* ===================================
+     REDUCED MOTION SUPPORT
+     =================================== */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  
+    .customer-list li:hover,
+    .customer-list li:focus-within {
+      transform: none;
+    }
+  
+    .submit:hover {
+      transform: none;
+    }
+  }
+  
+  /* ===================================
+     HIGH CONTRAST MODE
+     =================================== */
+  @media (prefers-contrast: high) {
+    .form label input,
+    .form label select,
+    .form label textarea {
+      border-width: 2px;
+      border-color: currentColor;
+    }
+  
+    .form label input:focus,
+    .form label select:focus,
+    .form label textarea:focus {
+      border-width: 3px;
+    }
+  
+    .customer-list li {
+      border: 2px solid currentColor;
+    }
+  
+    .submit {
+      border: 2px solid currentColor;
+    }
+  }
