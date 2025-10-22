@@ -1,0 +1,2 @@
+[2025-10-22 11:05:44] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-10-22 11:06:29] User: admin (ID: 1) | Action: admin_verification | Details: Admin admin verified for action: approve_customer | IP: 127.0.0.1

@@ -38,6 +38,8 @@ $outstanding = $total_billed - $total_paid;
     <meta charset="UTF-8">
     <title>Reports</title>
     <link rel="stylesheet" href="css/reports.css">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/utilities.css">
 </head>
 
 <body>

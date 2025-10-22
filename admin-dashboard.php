@@ -73,7 +73,6 @@ requireAdminAuth();
         // Hide the loading screen after a brief delay
         window.onload = function() {
             document.getElementById("loading").style.display = "none";
-            document.querySelector("div").style.display = "block";
         };
     </script>
 

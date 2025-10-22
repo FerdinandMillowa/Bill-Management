@@ -1,157 +1,341 @@
 <?php
-// File: login.php
-require_once 'controllers/AuthController.php';
+session_start();
 
-$error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
+// Redirect if already logged in - BOTH go to index.php
+if (isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit();
+}
 
-    if (AuthController::login($email, $password)) {
-        header('Location: dashboard.php');
-        exit;
-    } else {
-        $error = "Invalid email or password.";
+// Database connection and security
+require_once 'db-connection.php';
+require_once 'auth-helper.php';
+
+$error = "";
+$success = "";
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    try {
+        // Validate CSRF token
+        validateFormToken();
+
+        // Sanitize inputs
+        $username = secureFormInput($_POST['username']);
+        $password = $_POST['password'];
+        $remember_me = isset($_POST['remember_me']);
+
+        // Check rate limiting (prevent brute force)
+        $rate_limit_key = 'login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        if (!checkRateLimit($rate_limit_key, 5, 900)) { // 5 attempts in 15 minutes
+            $remaining = getRemainingLockoutTime($rate_limit_key, 900);
+            throw new Exception("Too many login attempts. Please try again in " . formatLockoutTime($remaining));
+        }
+
+        // Validate inputs
+        if (empty($username) || empty($password)) {
+            throw new Exception("Username and password are required.");
+        }
+
+        // Check user in database using prepared statement
+        $stmt = $conn->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+
+            // Verify password
+            if (password_verify($password, $user['password'])) {
+                // Set session variables for ALL users
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
+
+                // Set admin flag if admin
+                if ($user['role'] === 'admin') {
+                    $_SESSION['admin_logged_in'] = true;
+                    $_SESSION['admin_username'] = $user['username'];
+                }
+
+                // Handle "Remember Me"
+                if ($remember_me) {
+                    $token = bin2hex(random_bytes(32));
+                    setcookie('remember_token', $token, time() + (86400 * 30), "/", "", true, true); // 30 days
+                }
+
+                // Log activity
+                logActivity('login', "User logged in successfully");
+
+                // Check if there's a redirect URL stored
+                $redirect = $_SESSION['redirect_after_login'] ?? 'index.php';
+                unset($_SESSION['redirect_after_login']);
+
+                // EVERYONE goes to index.php (or their intended destination)
+                header("Location: $redirect");
+                exit();
+            } else {
+                throw new Exception("Invalid username or password.");
+            }
+        } else {
+            throw new Exception("Invalid username or password.");
+        }
+
+        $stmt->close();
+    } catch (Exception $e) {
+        $error = $e->getMessage();
     }
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Admin Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Bill Management System</title>
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/add-customer.css">
+    <link rel="stylesheet" href="css/utilities.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <style>
-        :root {
-            --bg-color: #f5f5f5;
-            --text-color: #333;
-            --card-bg: #fff;
-            --accent: #3f51b5;
-        }
-        [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #f5f5f5;
-            --card-bg: #1e1e1e;
-            --accent: #7986cb;
-        }
         body {
-            margin:0;
-            height:100vh;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            font-family:'Roboto', sans-serif;
-            background:var(--bg-color);
-            color:var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: var(--spacing-md, 20px);
         }
-        .login-box {
-            background:var(--card-bg);
-            padding:40px;
-            border-radius:12px;
-            box-shadow:0 6px 16px rgba(0,0,0,0.25);
-            width:360px;
-            text-align:center;
-            animation: fadeIn 0.4s ease;
+
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--bg-dark, #24323d);
+            border-radius: var(--radius-xl, 20px);
+            padding: var(--spacing-2xl, 40px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.5s ease;
         }
-        .login-box h2 {
-            margin-bottom:25px;
-            color:var(--accent);
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .form-group {
-            position:relative;
-            margin-bottom:20px;
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl, 30px);
         }
-        .form-group input {
-            width:fit-content;
-            padding:12px 40px 12px 12px;
-            border:1px solid #ccc;
-            border-radius:6px;
-            outline:none;
-            background:transparent;
-            color:var(--text-color);
-            font-size:15px;
+
+        .login-header h1 {
+            color: var(--color-accent, #1ab188);
+            font-size: clamp(1.75rem, 4vw, 2rem);
+            margin-bottom: var(--spacing-sm, 8px);
         }
-        .form-group input:focus {
-            border-color:var(--accent);
+
+        .login-header p {
+            color: var(--text-light, #e0e0e0);
+            font-size: var(--font-size-sm, 14px);
         }
-        .form-group i {
-            position:absolute;
-            right:12px;
-            top:50%;
-            transform:translateY(-50%);
-            color:#888;
+
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--spacing-lg, 20px);
+            background: var(--color-accent, #1ab188);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            box-shadow: 0 4px 20px rgba(26, 177, 136, 0.3);
         }
-        button {
-            width:100%;
-            padding:12px;
-            background:var(--accent);
-            color:white;
-            border:none;
-            border-radius:6px;
-            font-size:16px;
-            cursor:pointer;
-            transition:all 0.2s;
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm, 8px);
+            margin: var(--spacing-md, 15px) 0;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow:0 4px 10px rgba(0,0,0,0.2);
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+            transform: scale(1.2);
         }
-        .error {
-            color:#f44336;
-            margin-top:15px;
+
+        .checkbox-group label {
+            color: var(--text-light, #e0e0e0);
+            font-size: var(--font-size-sm, 14px);
+            cursor: pointer;
+            user-select: none;
         }
-        .theme-toggle {
-            position:absolute;
-            top:20px;
-            right:20px;
-            cursor:pointer;
-            color:var(--text-color);
-            font-size:20px;
-            transition:0.2s;
+
+        .form-footer {
+            text-align: center;
+            margin-top: var(--spacing-xl, 20px);
+            padding-top: var(--spacing-md, 15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .theme-toggle:hover { opacity:0.7; }
-        @keyframes fadeIn {
-            from { opacity:0; transform: translateY(-10px);}
-            to { opacity:1; transform: translateY(0);}
+
+        .form-footer p {
+            color: var(--text-light, #e0e0e0);
+            font-size: var(--font-size-sm, 14px);
+            margin: 0;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary, #777);
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        .input-icon input {
+            padding-left: 45px !important;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-secondary, #777);
+            font-size: 1.1rem;
+            transition: color var(--transition-base, 0.2s ease);
+        }
+
+        .password-toggle:hover {
+            color: var(--color-accent, #1ab188);
+        }
+
+        @media (max-width: 576px) {
+            .login-container {
+                padding: var(--spacing-xl, 30px) var(--spacing-lg, 20px);
+            }
+
+            .login-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="theme-toggle" onclick="toggleTheme()">
-        <i class="fas fa-moon"></i>
-    </div>
 
-    <div class="login-box">
-        <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
-        <form method="POST" action="">
-            <div class="form-group">
-                <input type="email" name="email" placeholder="Email" required>
-                <i class="fas fa-envelope"></i>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-icon">
+                <i class="fas fa-user-lock"></i>
             </div>
-            <div class="form-group">
-                <input type="password" name="password" placeholder="Password" required>
-                <i class="fas fa-lock"></i>
-            </div>
-            <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
-        </form>
+            <h1>Welcome Back</h1>
+            <p>Sign in to continue to Bill Management System</p>
+        </div>
+
         <?php if (!empty($error)): ?>
-            <div class="error"><?= htmlspecialchars($error) ?></div>
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($error); ?>
+            </div>
         <?php endif; ?>
+
+        <?php if (!empty($success)): ?>
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <?php echo htmlspecialchars($success); ?>
+            </div>
+        <?php endif; ?>
+
+        <form class="form" action="login.php" method="POST" autocomplete="off">
+            <?php echo getFormTokenField(); ?>
+
+            <label class="input-icon">
+                <i class="fas fa-user"></i>
+                <input
+                    type="text"
+                    name="username"
+                    required
+                    placeholder=" "
+                    maxlength="50"
+                    autofocus
+                    value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
+                <span>Username</span>
+            </label>
+
+            <label class="input-icon">
+                <i class="fas fa-lock"></i>
+                <input
+                    type="password"
+                    name="password"
+                    id="password"
+                    required
+                    placeholder=" "
+                    maxlength="100">
+                <span>Password</span>
+                <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+            </label>
+
+            <div class="checkbox-group">
+                <input
+                    type="checkbox"
+                    name="remember_me"
+                    id="remember_me"
+                    <?php echo isset($_POST['remember_me']) ? 'checked' : ''; ?>>
+                <label for="remember_me">Remember me for 30 days</label>
+            </div>
+
+            <button type="submit" class="submit">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+
+            <div class="form-footer">
+                <p>Bill Management System &copy; <?php echo date('Y'); ?></p>
+            </div>
+        </form>
     </div>
 
     <script>
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.querySelector('.theme-toggle i');
-            if (html.getAttribute('data-theme') === 'dark') {
-                html.removeAttribute('data-theme');
-                icon.classList.replace('fa-sun','fa-moon');
-            } else {
-                html.setAttribute('data-theme','dark');
-                icon.classList.replace('fa-moon','fa-sun');
-            }
-        }
+        // Password toggle functionality
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            // Toggle icon
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+
+        // Auto-hide messages after 5 seconds
+        setTimeout(() => {
+            const messages = document.querySelectorAll('.success-message, .error-message');
+            messages.forEach(msg => {
+                msg.style.animation = 'slideDown 0.3s ease reverse';
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 5000);
     </script>
 </body>
-</html>
+
+</html><?php $conn->close(); ?>

@@ -1,3 +1,7 @@
+<?php
+require_once 'auth-helper.php';
+requireAnyAuth(); // Redirects to login.php if not authenticated
+?>
 <!DOCTYPE html>
 <html lang="en">
 
