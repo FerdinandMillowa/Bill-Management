@@ -23,12 +23,35 @@ require_once 'auth-helper.php';
             </ul>
         </li>
         <li><a href="reports.php">Dashboard</a></li>
+
+        <?php if (isAdmin()): ?>
+            <li><a href="manage-users.php">
+                    <i class="fas fa-users-cog"></i> Manage Users
+                </a></li>
+        <?php endif; ?>
+
+        <?php if (isUserLoggedIn()): ?>
+            <li>
+                <a href="#">
+                    <i class="fas fa-user-circle"></i>
+                    <?php echo htmlspecialchars(getUsername()); ?>
+                </a>
+                <ul class="dropdown">
+                    <li><a href="profile.php">
+                            <i class="fas fa-user"></i> My Profile
+                        </a></li>
+                    <li><a href="logout.php">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a></li>
+                </ul>
+            </li>
+        <?php endif; ?>
     </ul>
-    <?php if (isAdminLoggedIn()): ?>
-        <a href="logout.php" class="action_btn">Logout (<?php echo htmlspecialchars($_SESSION['admin_username'] ?? 'Admin'); ?>)</a>
-    <?php else: ?>
-        <a href="admin-login.php" class="action_btn">Login</a>
+
+    <?php if (!isUserLoggedIn()): ?>
+        <a href="login.php" class="action_btn">Login</a>
     <?php endif; ?>
+
     <div class="toggle_btn">
         <i class="fa-solid fa-bars"></i>
     </div>
@@ -38,12 +61,20 @@ require_once 'auth-helper.php';
     <li><a href="add-bills.php">Add Bill</a></li>
     <li><a href="add-customer.php">Add Customer</a></li>
     <li><a href="add-payments.php">Add Payment</a></li>
-    <li><a href="view-bills.php">View Bills</a></li>
-    <li><a href="view-customers.php">View Customers</a></li>
     <li><a href="reports.php">Reports</a></li>
-    <?php if (isAdminLoggedIn()): ?>
+
+    <?php if (isAdmin()): ?>
+        <li><a href="manage-users.php">
+                <i class="fas fa-users-cog"></i> Manage Users
+            </a></li>
+    <?php endif; ?>
+
+    <?php if (isUserLoggedIn()): ?>
+        <li><a href="profile.php">
+                <i class="fas fa-user"></i> My Profile
+            </a></li>
         <li><a href="logout.php" class="action_btn">Logout</a></li>
     <?php else: ?>
-        <li><a href="admin-login.php" class="action_btn">Login</a></li>
+        <li><a href="login.php" class="action_btn">Login</a></li>
     <?php endif; ?>
 </div>

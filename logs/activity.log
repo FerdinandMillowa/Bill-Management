@@ -1,2 +1,6 @@
 [2025-10-22 11:05:44] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
 [2025-10-22 11:06:29] User: admin (ID: 1) | Action: admin_verification | Details: Admin admin verified for action: approve_customer | IP: 127.0.0.1
+[2025-10-23 07:02:43] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-10-23 07:05:24] User: admin (ID: 1) | Action: user_created | Details: New user created: Elia (Role: user) | IP: 127.0.0.1
+[2025-10-23 07:06:49] User: Elia (ID: 2) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-10-23 11:56:10] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
