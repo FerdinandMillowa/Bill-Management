@@ -22,7 +22,11 @@ require_once 'auth-helper.php';
                 <li><a href="reports-customers.php">Customers Report</a></li>
             </ul>
         </li>
-        <li><a href="reports.php">Dashboard</a></li>
+        <?php if (isAdmin()): ?>
+            <li><a href="admin-dashboard/admin-dashboard.php">
+                    <i class="fas fa-user-cog"></i> Dashboard
+                </a></li>
+        <?php endif; ?>
 
         <?php if (isAdmin()): ?>
             <li><a href="manage-users.php">

@@ -18,7 +18,7 @@ requireAnyAuth(); // Redirects to login.php if not authenticated
 
 <body>
   <header>
-    <?php include 'header.php'; ?>
+    <?php include 'header-new.php'; ?>
   </header>
 
   <main>

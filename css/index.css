@@ -150,7 +150,7 @@
   /* ===================================
      HEADER
      =================================== */
-  header {
+   /* header {
     position: relative;
     padding: 0 var(--spacing-xl);
   }
@@ -163,12 +163,12 @@
   .header_center h1 {
     color: var(--color-primary);
     margin-bottom: var(--spacing-sm);
-  }
+  }  */
   
   /* ===================================
      NAVIGATION BAR
      =================================== */
-  .navbar {
+  /* .navbar {
     width: 100%;
     height: 60px;
     max-width: 1200px;
@@ -219,10 +219,10 @@
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
-  }
-  
+  } */
+   
   /* Action Button */
-  .action_btn {
+   /* .action_btn {
     background-color: var(--color-secondary);
     color: var(--text-white);
     padding: var(--spacing-sm) var(--spacing-md);
@@ -249,12 +249,12 @@
   .action_btn:focus-visible {
     outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
-  }
+  } */
   
   /* ===================================
      DROPDOWN MENU (MOBILE)
      =================================== */
-  .dropdown_menu {
+  /* .dropdown_menu {
     display: none;
     position: absolute;
     right: var(--spacing-xl);
@@ -295,11 +295,11 @@
     display: flex;
     justify-content: center;
   }
-  
+   */
   /* ===================================
      NAVIGATION DROPDOWN (REPORTS)
      =================================== */
-  .dropdown {
+  /* .dropdown {
     display: none;
     position: absolute;
     top: 100%;
@@ -344,7 +344,7 @@
   /* ===================================
      HERO SECTION
      =================================== */
-  section#hero {
+  /*section#hero {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -357,7 +357,7 @@
   #hero h1 {
     margin-bottom: var(--spacing-md);
   }
-  
+   */
   /* ===================================
      EVENTS/CARDS SECTION
      =================================== */
@@ -500,7 +500,7 @@
       --spacing-xl: 1.5rem;
     }
   
-    .navbar .links,
+    /* .navbar .links,
     .navbar .action_btn {
       display: none;
     }
@@ -511,7 +511,7 @@
   
     .dropdown_menu {
       display: block;
-    }
+    } */
   
     .event {
       width: 95%;
@@ -549,7 +549,7 @@
       font-size: var(--font-size-2xl);
     }
   
-    .navbar {
+    /* .navbar {
       height: auto;
       padding: var(--spacing-sm) 0;
     }
@@ -565,7 +565,7 @@
     .icons .fa {
       margin: 0 var(--spacing-sm);
       font-size: var(--font-size-base);
-    }
+    } */
   }
   
   /* ===================================
@@ -613,3 +613,5 @@
       margin: 2cm;
     }
   }
+
+

@@ -156,7 +156,7 @@ if (isAdmin()) {
 
 <body>
     <header>
-        <?php include 'header.php'; ?>
+        <?php include 'header-new.php'; ?>
         <?php if (!empty($success)) : ?>
             <p class="success-message">
                 <i class="fas fa-check-circle"></i>

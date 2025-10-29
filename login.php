@@ -14,6 +14,12 @@ require_once 'auth-helper.php';
 $error = "";
 $success = "";
 
+// Update last login timestamp
+$update_login = $conn->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+$update_login->bind_param("i", $user_id);
+$update_login->execute();
+$update_login->close();
+
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     try {

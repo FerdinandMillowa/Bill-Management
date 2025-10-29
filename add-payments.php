@@ -86,6 +86,7 @@ $recent_payments = $conn->query("
   <link rel="stylesheet" href="css/reports.css">
   <link rel="stylesheet" href="css/utilities.css">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <style>
@@ -144,7 +145,7 @@ $recent_payments = $conn->query("
 
 <body>
   <header>
-    <?php include 'header.php'; ?>
+    <?php include 'header-new.php'; ?>
     <?php if (!empty($success)): ?>
       <p class="success-message"><?php echo $success; ?></p>
     <?php elseif (!empty($error)): ?>
