@@ -35,8 +35,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             throw new Exception("Description is required.");
         }
 
-        // Check customer exists and is approved
-        $check = $conn->prepare("SELECT id FROM customers WHERE id=? AND status='approved'");
+        // Check customer exists, is approved, and get their name
+        $check = $conn->prepare("SELECT id, CONCAT(first_name, ' ', last_name) as full_name FROM customers WHERE id=? AND status='approved'");
         $check->bind_param("i", $customer_id);
         $check->execute();
         $check_result = $check->get_result();
@@ -44,11 +44,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($check_result->num_rows == 0) {
             throw new Exception("Selected customer is not approved or doesn't exist.");
         }
+        
+        $customer_data = $check_result->fetch_assoc();
+        $bill_name = $customer_data['full_name']; // Use customer's full name as bill_name
         $check->close();
 
-        // Insert bill
-        $stmt = $conn->prepare("INSERT INTO bills (customer_id, amount, description) VALUES (?, ?, ?)");
-        $stmt->bind_param("ids", $customer_id, $amount, $description);
+        // Insert bill with bill_name (customer's name)
+        $stmt = $conn->prepare("INSERT INTO bills (customer_id, bill_name, amount, description) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("isds", $customer_id, $bill_name, $amount, $description);
 
         if ($stmt->execute()) {
             $success = "Bill added successfully!";
@@ -64,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Fetch recent bills
 $recent_bills = $conn->query("
-    SELECT b.amount, b.description, b.created_at, 
+    SELECT b.bill_name, b.amount, b.description, b.created_at, 
            c.first_name, c.last_name 
     FROM bills b
     JOIN customers c ON b.customer_id = c.id
@@ -156,6 +159,7 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                     <?php while ($bill = $recent_bills->fetch_assoc()): ?>
                         <li>
                             <strong><?php echo htmlspecialchars($bill['first_name'] . " " . $bill['last_name']); ?></strong>
+                            <span class="bill-name"><?php echo htmlspecialchars($bill['bill_name']); ?></span>
                             <span>MWK <?php echo number_format($bill['amount'], 2); ?></span>
                             <span><?php echo htmlspecialchars($bill['description']); ?></span>
                             <small><?php echo date("M j, Y", strtotime($bill['created_at'])); ?></small>

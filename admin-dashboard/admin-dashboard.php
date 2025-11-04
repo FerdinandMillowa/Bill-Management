@@ -31,6 +31,9 @@ $total_payments_count = $total_payments_data['count'];
 // 3. Outstanding Balance
 $outstanding_balance = $total_revenue - $total_payments;
 
+// Determine if overpaid
+$is_overpaid = ($outstanding_balance < 0);
+
 // 4. Customer Statistics
 $customers_query = $conn->query("
     SELECT 
@@ -45,7 +48,16 @@ $approved_customers = $customers_data['approved'];
 $pending_customers = $customers_data['pending'];
 
 // 5. Calculate percentages for circular progress
-$collection_rate = $total_revenue > 0 ? round(($total_payments / $total_revenue) * 100, 1) : 0;
+// Collection rate should never exceed 100%
+$collection_rate = $total_revenue > 0 ? min(round(($total_payments / $total_revenue) * 100, 1), 100) : 0;
+$outstanding_percentage = $total_revenue > 0 ? max(round((abs($outstanding_balance) / $total_revenue) * 100, 1), 0) : 0;
+
+// If there's an overpayment (negative outstanding), show it differently
+$is_overpaid = $outstanding_balance < 0;
+if ($is_overpaid) {
+    $outstanding_percentage = round((abs($outstanding_balance) / $total_payments) * 100, 1);
+}
+
 $approval_rate = $total_customers > 0 ? round(($approved_customers / $total_customers) * 100, 1) : 0;
 
 // Calculate growth percentages (compare with last month)
@@ -66,15 +78,20 @@ $last_month_bills = $conn->query("
 $revenue_growth = $last_month_bills > 0 ? round((($current_month_bills - $last_month_bills) / $last_month_bills) * 100, 1) : 0;
 
 // Fetch recent customers (last 4)
-$recent_customers = $conn->query("
+$recent_customers_result = $conn->query("
     SELECT id, first_name, last_name, created_at, status
     FROM customers 
     ORDER BY created_at DESC 
     LIMIT 4
 ");
 
+if (!$recent_customers_result) {
+    // Create empty result set if query fails
+    $recent_customers_result = new mysqli_result($conn);
+}
+
 // Fetch recent bills (last 5)
-$recent_bills = $conn->query("
+$recent_bills_result = $conn->query("
     SELECT b.id, b.amount, b.description, b.created_at,
            c.first_name, c.last_name
     FROM bills b
@@ -83,8 +100,12 @@ $recent_bills = $conn->query("
     LIMIT 5
 ");
 
+if (!$recent_bills_result) {
+    $recent_bills_result = new mysqli_result($conn);
+}
+
 // Fetch recent payments (last 5)
-$recent_payments = $conn->query("
+$recent_payments_result = $conn->query("
     SELECT p.id, p.amount, p.payment_method, p.created_at,
            c.first_name, c.last_name
     FROM payments p
@@ -93,8 +114,12 @@ $recent_payments = $conn->query("
     LIMIT 5
 ");
 
+if (!$recent_payments_result) {
+    $recent_payments_result = new mysqli_result($conn);
+}
+
 // Fetch pending approvals
-$pending_approvals = $conn->query("
+$pending_approvals_result = $conn->query("
     SELECT id, first_name, last_name, email, phone, created_at
     FROM customers
     WHERE status = 'pending'
@@ -102,8 +127,12 @@ $pending_approvals = $conn->query("
     LIMIT 5
 ");
 
+if (!$pending_approvals_result) {
+    $pending_approvals_result = new mysqli_result($conn);
+}
+
 // Get monthly revenue data for chart (last 6 months)
-$monthly_data = $conn->query("
+$monthly_data_query = "
     SELECT 
         DATE_FORMAT(created_at, '%b %Y') as month,
         COALESCE(SUM(amount), 0) as total
@@ -111,27 +140,70 @@ $monthly_data = $conn->query("
     WHERE created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
     GROUP BY YEAR(created_at), MONTH(created_at)
     ORDER BY YEAR(created_at), MONTH(created_at)
-");
+";
 
 $chart_labels = [];
 $chart_data = [];
-// while ($row = $monthly_data->fetch_assoc()) {
-//     $chart_labels[] = $row['month'];
-//     $chart_data[] = $row['total'];
-// }
+
+$monthly_data = $conn->query($monthly_data_query);
+if ($monthly_data && $monthly_data->num_rows > 0) {
+    while ($row = $monthly_data->fetch_assoc()) {
+        $chart_labels[] = $row['month'];
+        $chart_data[] = $row['total'];
+    }
+} else {
+    // Default empty data if no bills exist
+    $chart_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    $chart_data = [0, 0, 0, 0, 0, 0];
+}
 
 // Get payment methods distribution
-$payment_methods = $conn->query("
+$payment_methods_query = "
     SELECT payment_method, COUNT(*) as count
     FROM payments
     GROUP BY payment_method
-");
+";
 
 $payment_methods_labels = [];
 $payment_methods_data = [];
-while ($row = $payment_methods->fetch_assoc()) {
-    $payment_methods_labels[] = ucwords(str_replace('_', ' ', $row['payment_method']));
-    $payment_methods_data[] = $row['count'];
+
+$payment_methods = $conn->query($payment_methods_query);
+if ($payment_methods && $payment_methods->num_rows > 0) {
+    while ($row = $payment_methods->fetch_assoc()) {
+        $payment_methods_labels[] = ucwords(str_replace('_', ' ', $row['payment_method']));
+        $payment_methods_data[] = $row['count'];
+    }
+} else {
+    // Default empty data if no payments exist
+    $payment_methods_labels = ['Cash', 'Bank Transfer', 'Mobile Money'];
+    $payment_methods_data = [0, 0, 0];
+}
+
+// Helper function for time ago
+function time_elapsed_string($datetime, $full = false)
+{
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $string = array(
+        'y' => 'year',
+        'm' => 'month',
+        'd' => 'day',
+        'h' => 'hour',
+        'i' => 'min',
+        's' => 'sec',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+        } else {
+            unset($string[$k]);
+        }
+    }
+
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' ago' : 'just now';
 }
 ?>
 <!DOCTYPE html>
@@ -232,11 +304,11 @@ while ($row = $payment_methods->fetch_assoc()) {
                         </div>
                     </div>
                 </div>
-                <div class="visits">
+                <div class="visits <?php echo $is_overpaid ? 'overpaid' : ''; ?>">
                     <div class="status">
                         <div class="info">
-                            <h3>Outstanding</h3>
-                            <h1>MWK <?php echo number_format($outstanding_balance, 2); ?></h1>
+                            <h3><?php echo $is_overpaid ? 'Overpayment' : 'Outstanding'; ?></h3>
+                            <h1>MWK <?php echo number_format(abs($outstanding_balance), 2); ?></h1>
                             <small><?php echo $collection_rate; ?>% Collected</small>
                         </div>
                         <div class="progresss">
@@ -244,7 +316,7 @@ while ($row = $payment_methods->fetch_assoc()) {
                                 <circle cx="38" cy="38" r="36"></circle>
                             </svg>
                             <div class="percentage">
-                                <p><?php echo 100 - $collection_rate; ?>%</p>
+                                <p><?php echo $is_overpaid ? '+' : ''; ?><?php echo $outstanding_percentage; ?>%</p>
                             </div>
                         </div>
                     </div>
@@ -272,7 +344,15 @@ while ($row = $payment_methods->fetch_assoc()) {
             <!-- Charts Section -->
             <div class="charts">
                 <div class="chart-container">
-                    <h2>Revenue Trend (Last 6 Months)</h2>
+                    <div class="chart-header">
+                        <h2>Revenue Trend</h2>
+                        <div class="chart-filter">
+                            <button class="filter-btn active" data-period="weekly">Weekly</button>
+                            <button class="filter-btn" data-period="monthly">Monthly</button>
+                            <button class="filter-btn" data-period="biannual">Bi-Annual</button>
+                            <button class="filter-btn" data-period="annual">Annual</button>
+                        </div>
+                    </div>
                     <canvas id="revenueChart"></canvas>
                 </div>
                 <div class="chart-container">
@@ -288,19 +368,23 @@ while ($row = $payment_methods->fetch_assoc()) {
                 <div class="user-list">
                     <?php
                     $customer_count = 0;
-                    while ($customer = $recent_customers->fetch_assoc()):
-                        if ($customer_count >= 3) break;
-                        $customer_count++;
-                        $time_ago = time_elapsed_string($customer['created_at']);
+                    if ($recent_customers_result && $recent_customers_result->num_rows > 0):
+                        while ($customer = $recent_customers_result->fetch_assoc()):
+                            if ($customer_count >= 3) break;
+                            $customer_count++;
+                            $time_ago = time_elapsed_string($customer['created_at']);
                     ?>
-                        <div class="user">
-                            <div class="user-avatar">
-                                <?php echo strtoupper(substr($customer['first_name'], 0, 1)); ?>
+                            <div class="user">
+                                <div class="user-avatar">
+                                    <?php echo strtoupper(substr($customer['first_name'], 0, 1)); ?>
+                                </div>
+                                <h2><?php echo htmlspecialchars($customer['first_name']); ?></h2>
+                                <p><?php echo $time_ago; ?></p>
                             </div>
-                            <h2><?php echo htmlspecialchars($customer['first_name']); ?></h2>
-                            <p><?php echo $time_ago; ?></p>
-                        </div>
-                    <?php endwhile; ?>
+                    <?php
+                        endwhile;
+                    endif;
+                    ?>
                     <div class="user">
                         <a href="../add-customer.php" style="text-decoration: none; color: inherit;">
                             <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-primary);">add_circle</span>
@@ -343,19 +427,30 @@ while ($row = $payment_methods->fetch_assoc()) {
                         </thead>
                         <tbody>
                             <?php
-                            $recent_bills->data_seek(0);
-                            while ($bill = $recent_bills->fetch_assoc()):
+                            if ($recent_bills_result && $recent_bills_result->num_rows > 0):
+                                $recent_bills_result->data_seek(0);
+                                while ($bill = $recent_bills_result->fetch_assoc()):
                             ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($bill['first_name'] . ' ' . $bill['last_name']); ?></td>
+                                        <td><?php echo htmlspecialchars(substr($bill['description'], 0, 30)) . '...'; ?></td>
+                                        <td>MWK <?php echo number_format($bill['amount'], 2); ?></td>
+                                        <td><?php echo date('M j, Y', strtotime($bill['created_at'])); ?></td>
+                                        <td class="primary">
+                                            <a href="../add-bills.php" style="color: var(--color-primary);">View</a>
+                                        </td>
+                                    </tr>
+                                <?php
+                                endwhile;
+                            else:
+                                ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($bill['first_name'] . ' ' . $bill['last_name']); ?></td>
-                                    <td><?php echo htmlspecialchars(substr($bill['description'], 0, 30)) . '...'; ?></td>
-                                    <td>MWK <?php echo number_format($bill['amount'], 2); ?></td>
-                                    <td><?php echo date('M j, Y', strtotime($bill['created_at'])); ?></td>
-                                    <td class="primary">
-                                        <a href="../add-bills.php" style="color: var(--color-primary);">View</a>
+                                    <td colspan="5" style="text-align: center; padding: 2rem;">
+                                        <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">receipt_long</span>
+                                        <p>No bills yet</p>
                                     </td>
                                 </tr>
-                            <?php endwhile; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                     <a href="../add-bills.php">Show All Bills</a>
@@ -375,19 +470,30 @@ while ($row = $payment_methods->fetch_assoc()) {
                         </thead>
                         <tbody>
                             <?php
-                            $recent_payments->data_seek(0);
-                            while ($payment = $recent_payments->fetch_assoc()):
+                            if ($recent_payments_result && $recent_payments_result->num_rows > 0):
+                                $recent_payments_result->data_seek(0);
+                                while ($payment = $recent_payments_result->fetch_assoc()):
                             ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']); ?></td>
+                                        <td><?php echo ucwords(str_replace('_', ' ', $payment['payment_method'])); ?></td>
+                                        <td class="success">MWK <?php echo number_format($payment['amount'], 2); ?></td>
+                                        <td><?php echo date('M j, Y', strtotime($payment['created_at'])); ?></td>
+                                        <td class="primary">
+                                            <a href="../add-payments.php" style="color: var(--color-primary);">View</a>
+                                        </td>
+                                    </tr>
+                                <?php
+                                endwhile;
+                            else:
+                                ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']); ?></td>
-                                    <td><?php echo ucwords(str_replace('_', ' ', $payment['payment_method'])); ?></td>
-                                    <td class="success">MWK <?php echo number_format($payment['amount'], 2); ?></td>
-                                    <td><?php echo date('M j, Y', strtotime($payment['created_at'])); ?></td>
-                                    <td class="primary">
-                                        <a href="../add-payments.php" style="color: var(--color-primary);">View</a>
+                                    <td colspan="5" style="text-align: center; padding: 2rem;">
+                                        <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">payments</span>
+                                        <p>No payments yet</p>
                                     </td>
                                 </tr>
-                            <?php endwhile; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                     <a href="../add-payments.php">Show All Payments</a>
@@ -407,9 +513,9 @@ while ($row = $payment_methods->fetch_assoc()) {
                         </thead>
                         <tbody>
                             <?php
-                            $pending_approvals->data_seek(0);
-                            if ($pending_approvals->num_rows > 0):
-                                while ($approval = $pending_approvals->fetch_assoc()):
+                            if ($pending_approvals_result && $pending_approvals_result->num_rows > 0):
+                                $pending_approvals_result->data_seek(0);
+                                while ($approval = $pending_approvals_result->fetch_assoc()):
                             ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($approval['first_name'] . ' ' . $approval['last_name']); ?></td>
@@ -534,101 +640,139 @@ while ($row = $payment_methods->fetch_assoc()) {
 
     </div>
 
-    <script src="js/dashboard.js"></script>
+    <script src="js/admin-dashboard.js"></script>
     <script>
         // Chart.js Configuration
-        const chartLabels = <?php echo json_encode($chart_labels); ?>;
-        const chartData = <?php echo json_encode($chart_data); ?>;
+        let revenueChart; // Store chart instance globally
         const paymentMethodsLabels = <?php echo json_encode($payment_methods_labels); ?>;
         const paymentMethodsData = <?php echo json_encode($payment_methods_data); ?>;
 
-        // Revenue Trend Chart
-        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    label: 'Revenue (MWK)',
-                    data: chartData,
-                    borderColor: '#1B9C85',
-                    backgroundColor: 'rgba(27, 156, 133, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        // Initialize Revenue Chart with default data (weekly)
+        function initRevenueChart(labels, data) {
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue (MWK)',
+                        data: data,
+                        borderColor: '#1B9C85',
+                        backgroundColor: 'rgba(27, 156, 133, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'MWK ' + context.parsed.y.toLocaleString('en-US', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MWK ' + value.toLocaleString();
+                                }
+                            }
+                        }
                     }
                 }
-            }
+            });
+        }
+
+        // Load revenue data based on period
+        function loadRevenueData(period) {
+            // Show loading state
+            const chartContainer = document.querySelector('.chart-container');
+
+            fetch(`get-revenue-data.php?period=${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        initRevenueChart(data.labels, data.data);
+                    } else {
+                        console.error('Failed to load revenue data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching revenue data:', error);
+                });
+        }
+
+        // Initialize with weekly data
+        loadRevenueData('weekly');
+
+        // Add event listeners to filter buttons
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Add active class to clicked button
+                this.classList.add('active');
+
+                // Load data for selected period
+                const period = this.getAttribute('data-period');
+                loadRevenueData(period);
+            });
         });
 
         // Payment Methods Chart
-        const paymentCtx = document.getElementById('paymentMethodsChart').getContext('2d');
-        new Chart(paymentCtx, {
-            type: 'doughnut',
-            data: {
-                labels: paymentMethodsLabels,
-                datasets: [{
-                    data: paymentMethodsData,
-                    backgroundColor: [
-                        '#1B9C85',
-                        '#6C9BCF',
-                        '#F7D060',
-                        '#FF0060'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+        if (paymentMethodsLabels.length > 0 && paymentMethodsData.length > 0) {
+            const paymentCtx = document.getElementById('paymentMethodsChart').getContext('2d');
+            new Chart(paymentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: paymentMethodsLabels,
+                    datasets: [{
+                        data: paymentMethodsData,
+                        backgroundColor: [
+                            '#1B9C85',
+                            '#6C9BCF',
+                            '#F7D060',
+                            '#FF0060',
+                            '#9B59B6',
+                            '#E67E22'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     </script>
 </body>
 
 </html>
-
-<?php
-// Helper function for time ago
-function time_elapsed_string($datetime, $full = false)
-{
-    $now = new DateTime;
-    $ago = new DateTime($datetime);
-    $diff = $now->diff($ago);
-
-    $string = array(
-        'y' => 'year',
-        'm' => 'month',
-        'd' => 'day',
-        'h' => 'hour',
-        'i' => 'min',
-        's' => 'sec',
-    );
-    foreach ($string as $k => &$v) {
-        if ($diff->$k) {
-            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
-        } else {
-            unset($string[$k]);
-        }
-    }
-
-    if (!$full) $string = array_slice($string, 0, 1);
-    return $string ? implode(', ', $string) . ' ago' : 'just now';
-}
-?>

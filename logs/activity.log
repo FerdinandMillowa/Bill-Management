@@ -7,3 +7,11 @@
 [2025-10-29 08:04:41] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
 [2025-10-29 09:14:56] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
 [2025-10-29 10:47:15] User: Elia (ID: 2) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-10-29 11:24:50] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-10-30 13:58:33] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-11-04 07:26:43] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-11-04 07:53:07] User: admin (ID: 1) | Action: admin_verification | Details: Admin admin verified for action: approve_customer | IP: 127.0.0.1
+[2025-11-04 07:53:16] User: admin (ID: 1) | Action: admin_verification | Details: Admin admin verified for action: approve_customer | IP: 127.0.0.1
+[2025-11-04 07:53:31] User: admin (ID: 1) | Action: admin_verification | Details: Admin admin verified for action: approve_customer | IP: 127.0.0.1
+[2025-11-04 07:53:37] User: admin (ID: 1) | Action: admin_verification | Details: Admin admin verified for action: approve_customer | IP: 127.0.0.1
+[2025-11-04 11:41:26] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
