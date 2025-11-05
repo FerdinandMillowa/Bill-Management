@@ -238,11 +238,11 @@ function time_elapsed_string($datetime, $full = false)
                     <span class="material-icons-sharp">dashboard</span>
                     <h3>Dashboard</h3>
                 </a>
-                <a href="../manage-users.php">
+                <a href="./manage-users-dashboard.php">
                     <span class="material-icons-sharp">person_outline</span>
                     <h3>Users</h3>
                 </a>
-                <a href="../add-customer.php">
+                <a href="./add-customer.php">
                     <span class="material-icons-sharp">group</span>
                     <h3>Customers</h3>
                     <?php if ($pending_customers > 0): ?>
