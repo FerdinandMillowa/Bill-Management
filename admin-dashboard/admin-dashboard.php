@@ -249,11 +249,11 @@ function time_elapsed_string($datetime, $full = false)
                         <span class="message-count"><?php echo $pending_customers; ?></span>
                     <?php endif; ?>
                 </a>
-                <a href="../add-bills.php">
+                <a href="./add-bills.php">
                     <span class="material-icons-sharp">receipt_long</span>
                     <h3>Bills</h3>
                 </a>
-                <a href="../add-payments.php">
+                <a href="./add-payments.php">
                     <span class="material-icons-sharp">payments</span>
                     <h3>Payments</h3>
                 </a>

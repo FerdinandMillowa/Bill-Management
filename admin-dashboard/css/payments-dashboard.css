@@ -1,0 +1,192 @@
+/* ===========================================
+   PAYMENT MANAGEMENT - DASHBOARD INTEGRATION
+   =========================================== */
+
+/* Inherit from bills-dashboard.css for common styles */
+@import url("bills-dashboard.css");
+
+/* Customer Balance Info Card */
+.customer-balance-info {
+  grid-column: 1 / -1;
+  margin: 1rem 0;
+}
+
+.balance-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-success)
+  );
+  padding: 1.2rem 1.5rem;
+  border-radius: var(--border-radius-2);
+  color: white;
+  box-shadow: 0 4px 12px rgba(27, 156, 133, 0.2);
+  animation: slideIn 0.3s ease;
+}
+
+.balance-card .material-icons-sharp {
+  font-size: 3rem;
+  opacity: 0.9;
+}
+
+.balance-details h4 {
+  margin: 0 0 0.3rem 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.balance-details p {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.balance-positive {
+  color: #ffeb3b !important;
+}
+
+.balance-zero {
+  color: white !important;
+}
+
+.balance-negative {
+  color: #ff9800 !important;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Payment Method Badges */
+.method-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.method-cash {
+  background: rgba(76, 175, 80, 0.15);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+}
+
+.method-mobile_money {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196f3;
+  border: 1px solid #2196f3;
+}
+
+.method-bank {
+  background: rgba(156, 39, 176, 0.15);
+  color: #9c27b0;
+  border: 1px solid #9c27b0;
+}
+
+.method-card {
+  background: rgba(255, 152, 0, 0.15);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+}
+
+/* Payment ID Styling */
+.payment-id {
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  color: var(--color-success);
+  background: rgba(27, 156, 133, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--border-radius-1);
+}
+
+/* Amount Styling */
+.amount.success {
+  font-weight: 700;
+  color: var(--color-success);
+  font-size: 0.95rem;
+}
+
+/* Collection Rate Circle */
+main .analyse .visits svg circle {
+  stroke: var(--color-success);
+  stroke-dashoffset: -30;
+  stroke-dasharray: 200;
+}
+
+/* Payment Methods in Right Sidebar */
+.reminders .notification .icon {
+  background-color: var(--color-success);
+}
+
+/* Override for different payment methods */
+.reminders .notification:nth-child(2) .icon {
+  background-color: #2196f3;
+}
+
+.reminders .notification:nth-child(3) .icon {
+  background-color: #9c27b0;
+}
+
+.reminders .notification:nth-child(4) .icon {
+  background-color: var(--color-warning);
+}
+
+.reminders .notification:nth-child(5) .icon {
+  background-color: var(--color-primary);
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .balance-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .balance-card .material-icons-sharp {
+    font-size: 2.5rem;
+  }
+
+  .balance-details h4 {
+    font-size: 0.85rem;
+  }
+
+  .balance-details p {
+    font-size: 1.2rem;
+  }
+}
+
+/* Dark Mode Adjustments */
+.dark-mode-variables .balance-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Animation for payment rows */
+#paymentsTable tbody tr {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

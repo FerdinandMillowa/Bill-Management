@@ -166,11 +166,11 @@ $recent_activities = $conn->query("
                     <span class="material-icons-sharp">group</span>
                     <h3>Customers</h3>
                 </a>
-                <a href="../add-bills.php">
+                <a href="./add-bills.php">
                     <span class="material-icons-sharp">receipt_long</span>
                     <h3>Bills</h3>
                 </a>
-                <a href="../add-payments.php">
+                <a href="./add-payments.php">
                     <span class="material-icons-sharp">payments</span>
                     <h3>Payments</h3>
                 </a>
