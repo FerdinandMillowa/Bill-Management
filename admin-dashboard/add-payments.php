@@ -161,13 +161,9 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                     <span class="material-icons-sharp">payments</span>
                     <h3>Payments</h3>
                 </a>
-                <a href="../reports.php">
+                <a href="./reports.php">
                     <span class="material-icons-sharp">insights</span>
                     <h3>Reports</h3>
-                </a>
-                <a href="../reports-bills.php">
-                    <span class="material-icons-sharp">description</span>
-                    <h3>Bill Reports</h3>
                 </a>
                 <a href="../profile.php">
                     <span class="material-icons-sharp">settings</span>
