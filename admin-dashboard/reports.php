@@ -27,20 +27,20 @@ $date_params = [];
 
 switch ($filter_period) {
     case 'today':
-        $date_filter = "DATE(created_at) = CURDATE()";
+        $date_filter = "DATE(b.created_at) = CURDATE()";
         break;
     case 'weekly':
-        $date_filter = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        $date_filter = "DATE(b.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
         break;
     case 'biweekly':
-        $date_filter = "created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)";
+        $date_filter = "DATE(b.created_at) >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)";
         break;
     case 'monthly':
-        $date_filter = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+        $date_filter = "DATE(b.created_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
         break;
     case 'custom':
         if ($start_date && $end_date) {
-            $date_filter = "DATE(created_at) BETWEEN ? AND ?";
+            $date_filter = "DATE(b.created_at) BETWEEN ? AND ?";
             $date_params = [$start_date, $end_date];
         }
         break;
@@ -49,76 +49,152 @@ switch ($filter_period) {
 }
 
 // Fetch Bills Report
-$bills_query = "
-    SELECT b.id, b.bill_name, b.amount, b.description, b.created_at,
-           c.first_name, c.last_name
-    FROM bills b
-    JOIN customers c ON b.customer_id = c.id
-    WHERE $date_filter
-    ORDER BY b.created_at DESC
-";
-
-$bills_stmt = $conn->prepare($bills_query);
 if (!empty($date_params)) {
-    $bills_stmt->bind_param("ss", ...$date_params);
+    // Use prepared statement for custom date range
+    $bills_query = "
+        SELECT b.id, b.amount, b.description, b.created_at,
+               c.first_name, c.last_name
+        FROM bills b
+        JOIN customers c ON b.customer_id = c.id
+        WHERE DATE(b.created_at) BETWEEN ? AND ?
+        ORDER BY b.created_at DESC
+    ";
+    $bills_stmt = $conn->prepare($bills_query);
+    if ($bills_stmt) {
+        $bills_stmt->bind_param("ss", $date_params[0], $date_params[1]);
+        $bills_stmt->execute();
+        $bills_result = $bills_stmt->get_result();
+    } else {
+        $bills_result = false;
+    }
+} else {
+    // Direct query for other filters
+    $bills_query = "
+        SELECT b.id, b.amount, b.description, b.created_at,
+               c.first_name, c.last_name
+        FROM bills b
+        JOIN customers c ON b.customer_id = c.id
+        WHERE $date_filter
+        ORDER BY b.created_at DESC
+    ";
+    $bills_result = $conn->query($bills_query);
 }
-$bills_stmt->execute();
-$bills_result = $bills_stmt->get_result();
 
 // Calculate bills statistics
-$bills_stats_query = "
-    SELECT 
-        COUNT(*) as total_count,
-        COALESCE(SUM(amount), 0) as total_amount,
-        COALESCE(AVG(amount), 0) as avg_amount,
-        COALESCE(MIN(amount), 0) as min_amount,
-        COALESCE(MAX(amount), 0) as max_amount
-    FROM bills b
-    WHERE $date_filter
-";
-
-$bills_stats_stmt = $conn->prepare($bills_stats_query);
 if (!empty($date_params)) {
-    $bills_stats_stmt->bind_param("ss", ...$date_params);
+    $bills_stats_query = "
+        SELECT 
+            COUNT(*) as total_count,
+            COALESCE(SUM(amount), 0) as total_amount,
+            COALESCE(AVG(amount), 0) as avg_amount,
+            COALESCE(MIN(amount), 0) as min_amount,
+            COALESCE(MAX(amount), 0) as max_amount
+        FROM bills b
+        WHERE DATE(b.created_at) BETWEEN ? AND ?
+    ";
+    $bills_stats_stmt = $conn->prepare($bills_stats_query);
+    if ($bills_stats_stmt) {
+        $bills_stats_stmt->bind_param("ss", $date_params[0], $date_params[1]);
+        $bills_stats_stmt->execute();
+        $bills_stats = $bills_stats_stmt->get_result()->fetch_assoc();
+    } else {
+        $bills_stats = ['total_count' => 0, 'total_amount' => 0, 'avg_amount' => 0, 'min_amount' => 0, 'max_amount' => 0];
+    }
+} else {
+    $bills_stats_query = "
+        SELECT 
+            COUNT(*) as total_count,
+            COALESCE(SUM(amount), 0) as total_amount,
+            COALESCE(AVG(amount), 0) as avg_amount,
+            COALESCE(MIN(amount), 0) as min_amount,
+            COALESCE(MAX(amount), 0) as max_amount
+        FROM bills b
+        WHERE $date_filter
+    ";
+    $result = $conn->query($bills_stats_query);
+    $bills_stats = $result ? $result->fetch_assoc() : ['total_count' => 0, 'total_amount' => 0, 'avg_amount' => 0, 'min_amount' => 0, 'max_amount' => 0];
 }
-$bills_stats_stmt->execute();
-$bills_stats = $bills_stats_stmt->get_result()->fetch_assoc();
 
 // Fetch Payments Report
-$payments_query = "
-    SELECT p.id, p.amount, p.payment_method, p.created_at,
-           c.first_name, c.last_name
-    FROM payments p
-    JOIN customers c ON p.customer_id = c.id
-    WHERE $date_filter
-    ORDER BY p.created_at DESC
-";
-
-$payments_stmt = $conn->prepare($payments_query);
 if (!empty($date_params)) {
-    $payments_stmt->bind_param("ss", ...$date_params);
+    $payments_query = "
+        SELECT p.id, p.amount, p.payment_method, p.created_at,
+               c.first_name, c.last_name
+        FROM payments p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE DATE(p.created_at) BETWEEN ? AND ?
+        ORDER BY p.created_at DESC
+    ";
+    $payments_stmt = $conn->prepare($payments_query);
+    if ($payments_stmt) {
+        $payments_stmt->bind_param("ss", $date_params[0], $date_params[1]);
+        $payments_stmt->execute();
+        $payments_result = $payments_stmt->get_result();
+    } else {
+        $payments_result = false;
+    }
+} else {
+    $payments_query = "
+        SELECT p.id, p.amount, p.payment_method, p.created_at,
+               c.first_name, c.last_name
+        FROM payments p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE DATE(p.created_at) >= DATE_SUB(CURDATE(), INTERVAL 
+            CASE 
+                WHEN '$filter_period' = 'today' THEN 0
+                WHEN '$filter_period' = 'weekly' THEN 7
+                WHEN '$filter_period' = 'biweekly' THEN 14
+                WHEN '$filter_period' = 'monthly' THEN 30
+                ELSE 36500
+            END DAY)
+        " . ($filter_period === 'today' ? "AND DATE(p.created_at) = CURDATE()" : "") . "
+        ORDER BY p.created_at DESC
+    ";
+    $payments_result = $conn->query($payments_query);
 }
-$payments_stmt->execute();
-$payments_result = $payments_stmt->get_result();
 
 // Calculate payments statistics
-$payments_stats_query = "
-    SELECT 
-        COUNT(*) as total_count,
-        COALESCE(SUM(amount), 0) as total_amount,
-        COALESCE(AVG(amount), 0) as avg_amount,
-        COALESCE(MIN(amount), 0) as min_amount,
-        COALESCE(MAX(amount), 0) as max_amount
-    FROM payments p
-    WHERE $date_filter
-";
-
-$payments_stats_stmt = $conn->prepare($payments_stats_query);
 if (!empty($date_params)) {
-    $payments_stats_stmt->bind_param("ss", ...$date_params);
+    $payments_stats_query = "
+        SELECT 
+            COUNT(*) as total_count,
+            COALESCE(SUM(amount), 0) as total_amount,
+            COALESCE(AVG(amount), 0) as avg_amount,
+            COALESCE(MIN(amount), 0) as min_amount,
+            COALESCE(MAX(amount), 0) as max_amount
+        FROM payments p
+        WHERE DATE(p.created_at) BETWEEN ? AND ?
+    ";
+    $payments_stats_stmt = $conn->prepare($payments_stats_query);
+    if ($payments_stats_stmt) {
+        $payments_stats_stmt->bind_param("ss", $date_params[0], $date_params[1]);
+        $payments_stats_stmt->execute();
+        $payments_stats = $payments_stats_stmt->get_result()->fetch_assoc();
+    } else {
+        $payments_stats = ['total_count' => 0, 'total_amount' => 0, 'avg_amount' => 0, 'min_amount' => 0, 'max_amount' => 0];
+    }
+} else {
+    $payments_stats_query = "
+        SELECT 
+            COUNT(*) as total_count,
+            COALESCE(SUM(amount), 0) as total_amount,
+            COALESCE(AVG(amount), 0) as avg_amount,
+            COALESCE(MIN(amount), 0) as min_amount,
+            COALESCE(MAX(amount), 0) as max_amount
+        FROM payments p
+        WHERE DATE(p.created_at) >= DATE_SUB(CURDATE(), INTERVAL 
+            CASE 
+                WHEN '$filter_period' = 'today' THEN 0
+                WHEN '$filter_period' = 'weekly' THEN 7
+                WHEN '$filter_period' = 'biweekly' THEN 14
+                WHEN '$filter_period' = 'monthly' THEN 30
+                ELSE 36500
+            END DAY)
+        " . ($filter_period === 'today' ? "AND DATE(p.created_at) = CURDATE()" : "") . "
+    ";
+    $result = $conn->query($payments_stats_query);
+    $payments_stats = $result ? $result->fetch_assoc() : ['total_count' => 0, 'total_amount' => 0, 'avg_amount' => 0, 'min_amount' => 0, 'max_amount' => 0];
 }
-$payments_stats_stmt->execute();
-$payments_stats = $payments_stats_stmt->get_result()->fetch_assoc();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -151,7 +227,7 @@ $payments_stats = $payments_stats_stmt->get_result()->fetch_assoc();
                     <span class="material-icons-sharp">dashboard</span>
                     <h3>Dashboard</h3>
                 </a>
-                <a href="./manage-users.php">
+                <a href="./manage-users-dashboard.php">
                     <span class="material-icons-sharp">person_outline</span>
                     <h3>Users</h3>
                 </a>
@@ -170,10 +246,6 @@ $payments_stats = $payments_stats_stmt->get_result()->fetch_assoc();
                 <a href="./reports.php" class="active">
                     <span class="material-icons-sharp">insights</span>
                     <h3>Reports</h3>
-                </a>
-                <a href="../reports-bills.php">
-                    <span class="material-icons-sharp">description</span>
-                    <h3>Bill Reports</h3>
                 </a>
                 <a href="../profile.php">
                     <span class="material-icons-sharp">settings</span>
@@ -281,7 +353,10 @@ $payments_stats = $payments_stats_stmt->get_result()->fetch_assoc();
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($bills_result->num_rows > 0): ?>
+                            <?php
+                            // Check if $bills_result is valid and has rows
+                            if ($bills_result && is_object($bills_result) && $bills_result->num_rows > 0):
+                            ?>
                                 <?php while ($bill = $bills_result->fetch_assoc()): ?>
                                     <tr>
                                         <td><span class="id-badge">#<?php echo str_pad($bill['id'], 5, '0', STR_PAD_LEFT); ?></span></td>
@@ -349,7 +424,10 @@ $payments_stats = $payments_stats_stmt->get_result()->fetch_assoc();
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($payments_result->num_rows > 0): ?>
+                            <?php
+                            // Check if $payments_result is valid and has rows
+                            if ($payments_result && is_object($payments_result) && $payments_result->num_rows > 0):
+                            ?>
                                 <?php while ($payment = $payments_result->fetch_assoc()): ?>
                                     <tr>
                                         <td><span class="id-badge success">#<?php echo str_pad($payment['id'], 5, '0', STR_PAD_LEFT); ?></span></td>
