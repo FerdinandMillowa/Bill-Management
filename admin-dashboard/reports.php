@@ -247,7 +247,7 @@ if (!empty($date_params)) {
                     <span class="material-icons-sharp">insights</span>
                     <h3>Reports</h3>
                 </a>
-                <a href="../profile.php">
+                <a href="./profile.php">
                     <span class="material-icons-sharp">settings</span>
                     <h3>Profile</h3>
                 </a>
