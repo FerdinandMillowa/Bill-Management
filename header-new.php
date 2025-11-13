@@ -56,15 +56,10 @@ require_once 'auth-helper.php';
                                         <i class="fas fa-chart-line"></i> Dashboard
                                     </a>
                                 </li>
-                                <li>
-                                    <a href="manage-users.php">
-                                        <i class="fas fa-users-cog"></i> Manage Users
-                                    </a>
-                                </li>
                                 <li class="divider"></li>
                             <?php endif; ?>
                             <li>
-                                <a href="profile.php"> <i class="fas fa-user"></i> My Profile </a>
+                                <a href="./admin-dashboard/profile.php"> <i class="fas fa-user"></i> My Profile </a>
                             </li>
                             <li>
                                 <a href="logout.php">
