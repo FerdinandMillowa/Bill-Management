@@ -87,6 +87,9 @@ $stats = $stats_query->fetch_assoc();
 $payments_total = $conn->query("SELECT COALESCE(SUM(amount), 0) as total FROM payments")->fetch_assoc()['total'];
 $outstanding = $stats['total_amount'] - $payments_total;
 
+// Calculate collection rate
+$collection_rate = $stats['total_amount'] > 0 ? min(round(($payments_total / $stats['total_amount']) * 100, 1), 100) : 0;
+
 // Fetch recent bills
 $recent_bills = $conn->query("
     SELECT b.id, b.bill_name, b.amount, b.description, b.created_at, 
@@ -171,8 +174,14 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
         <!-- End of Sidebar Section -->
 
         <!-- Main Content -->
-        <main>
-            <h1>Bill Management</h1>
+        <main class="bills-main">
+            <div class="bills-header">
+                <h1>Bill Management</h1>
+                <a href="create-bill.php" class="add-bill-btn">
+                    <span class="material-icons-sharp">add_circle</span>
+                    Create Bill
+                </a>
+            </div>
 
             <!-- Alert Messages -->
             <?php if (!empty($success)): ?>
@@ -206,12 +215,17 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                 <div class="visits">
                     <div class="status">
                         <div class="info">
-                            <h3>Average Bill</h3>
-                            <h1>MWK <?php echo number_format($stats['avg_amount'], 0); ?></h1>
-                            <small>Per Transaction</small>
+                            <h3>Collection Rate</h3>
+                            <h1><?php echo $collection_rate; ?>%</h1>
+                            <small>Of Total Bills</small>
                         </div>
                         <div class="progresss">
-                            <span class="material-icons-sharp">analytics</span>
+                            <svg>
+                                <circle cx="38" cy="38" r="36"></circle>
+                            </svg>
+                            <div class="percentage">
+                                <p><?php echo $collection_rate; ?>%</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -229,127 +243,78 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                 </div>
             </div>
 
-            <!-- Add Bill Form -->
-            <div class="bill-form-container">
-                <h2>
-                    <span class="material-icons-sharp">add_circle</span>
-                    Create New Bill
-                </h2>
-                <form class="bill-form" method="POST" action="">
-                    <?php echo getFormTokenField(); ?>
-
-                    <div class="form-grid">
-                        <div class="form-group full-width select-group">
-                            <label class="select-label">Select Customer *</label>
-                            <select id="customer_id" name="customer_id" required style="width: 100%">
-                                <option value="">Select Customer</option>
-                                <?php
-                                $customers->data_seek(0);
-                                while ($cust = $customers->fetch_assoc()):
-                                    $name = htmlspecialchars($cust['first_name'] . " " . $cust['last_name']);
-                                ?>
-                                    <option value="<?php echo $cust['id']; ?>"
-                                        <?php echo (isset($_POST['customer_id']) && $_POST['customer_id'] == $cust['id']) ? 'selected' : ''; ?>>
-                                        <?php echo $name; ?>
-                                    </option>
-                                <?php endwhile; ?>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="input-label">
-                                <span>Amount (MWK) *</span>
-                                <input type="number" name="amount" required step="0.01" min="0.01"
-                                    value="<?php echo isset($_POST['amount']) ? htmlspecialchars($_POST['amount']) : ''; ?>">
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="input-label">
-                                <span>Description *</span>
-                                <input type="text" name="description" required maxlength="255"
-                                    value="<?php echo isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?>">
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="submit-btn">
-                        <span class="material-icons-sharp">add_circle</span>
-                        Create Bill
-                    </button>
-                </form>
-            </div>
-
             <!-- Bills Table -->
-            <div class="recent-orders">
-                <h2>Recent Bills</h2>
-                <div class="table-actions">
+            <div class="bills-table-container">
+                <div class="table-header">
+                    <h2>All Bills</h2>
                     <div class="search-box">
                         <span class="material-icons-sharp">search</span>
                         <input type="text" id="searchInput" placeholder="Search bills..." onkeyup="searchBills()">
                     </div>
                 </div>
 
-                <table id="billsTable">
-                    <thead>
-                        <tr>
-                            <th>Bill ID</th>
-                            <th>Customer</th>
-                            <th>Amount</th>
-                            <th>Description</th>
-                            <th>Date Created</th>
-                            <?php if (isAdmin()): ?>
-                                <th>Actions</th>
-                            <?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($recent_bills && $recent_bills->num_rows > 0): ?>
-                            <?php while ($bill = $recent_bills->fetch_assoc()): ?>
-                                <tr>
-                                    <td><span class="bill-id">#<?php echo str_pad($bill['id'], 5, '0', STR_PAD_LEFT); ?></span></td>
-                                    <td>
-                                        <div class="customer-info">
-                                            <strong><?php echo htmlspecialchars($bill['first_name'] . ' ' . $bill['last_name']); ?></strong>
-                                            <small><?php echo htmlspecialchars($bill['bill_name']); ?></small>
-                                        </div>
-                                    </td>
-                                    <td><span class="amount">MWK <?php echo number_format($bill['amount'], 2); ?></span></td>
-                                    <td><?php echo htmlspecialchars($bill['description']); ?></td>
-                                    <td><?php echo date('M j, Y g:i A', strtotime($bill['created_at'])); ?></td>
-                                    <?php if (isAdmin()): ?>
+                <div class="table-wrapper">
+                    <table id="billsTable">
+                        <thead>
+                            <tr>
+                                <th>Bill ID</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Date Created</th>
+                                <?php if (isAdmin()): ?>
+                                    <th>Actions</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($recent_bills && $recent_bills->num_rows > 0): ?>
+                                <?php while ($bill = $recent_bills->fetch_assoc()): ?>
+                                    <tr>
+                                        <td><span class="bill-id">#<?php echo str_pad($bill['id'], 5, '0', STR_PAD_LEFT); ?></span></td>
                                         <td>
-                                            <div class="action-btns">
-                                                <button class="btn-icon"
-                                                    onclick="viewBill(<?php echo $bill['id']; ?>)"
-                                                    title="View Details">
-                                                    <span class="material-icons-sharp">visibility</span>
-                                                </button>
-                                                <button class="btn-icon warning"
-                                                    onclick="editBill(<?php echo $bill['id']; ?>)"
-                                                    title="Edit">
-                                                    <span class="material-icons-sharp">edit</span>
-                                                </button>
-                                                <button class="btn-icon danger"
-                                                    onclick="deleteBill(<?php echo $bill['id']; ?>, '<?php echo htmlspecialchars($bill['bill_name']); ?>')"
-                                                    title="Delete">
-                                                    <span class="material-icons-sharp">delete</span>
-                                                </button>
+                                            <div class="customer-info">
+                                                <strong><?php echo htmlspecialchars($bill['first_name'] . ' ' . $bill['last_name']); ?></strong>
+                                                <small><?php echo htmlspecialchars($bill['bill_name']); ?></small>
                                             </div>
                                         </td>
-                                    <?php endif; ?>
+                                        <td><span class="amount">MWK <?php echo number_format($bill['amount'], 2); ?></span></td>
+                                        <td><?php echo htmlspecialchars($bill['description']); ?></td>
+                                        <td><?php echo date('M j, Y g:i A', strtotime($bill['created_at'])); ?></td>
+                                        <?php if (isAdmin()): ?>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="btn-icon"
+                                                        onclick="viewBill(<?php echo $bill['id']; ?>)"
+                                                        title="View Details">
+                                                        <span class="material-icons-sharp">visibility</span>
+                                                    </button>
+                                                    <button class="btn-icon warning"
+                                                        onclick="editBill(<?php echo $bill['id']; ?>)"
+                                                        title="Edit">
+                                                        <span class="material-icons-sharp">edit</span>
+                                                    </button>
+                                                    <button class="btn-icon danger"
+                                                        onclick="deleteBill(<?php echo $bill['id']; ?>, '<?php echo htmlspecialchars($bill['bill_name']); ?>')"
+                                                        title="Delete">
+                                                        <span class="material-icons-sharp">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
+                                        <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">receipt_long</span>
+                                        <p>No bills found</p>
+                                    </td>
                                 </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
-                                    <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">receipt_long</span>
-                                    <p>No bills found</p>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </main>

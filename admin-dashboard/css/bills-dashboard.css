@@ -1,6 +1,17 @@
 /* ===========================================
-   BILL MANAGEMENT - DASHBOARD INTEGRATION
+   BILL MANAGEMENT - DASHBOARD INTEGRATION (100VH)
    =========================================== */
+
+/* Override body and container for bills page */
+body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.container {
+  height: 100vh;
+  overflow: hidden;
+}
 
 /* Alert Messages */
 .alert {
@@ -40,223 +51,33 @@
   }
 }
 
-/* Statistics Cards Override */
-main .analyse .progresss span {
-  font-size: 3rem;
-  color: var(--color-primary);
-}
-
-/* Bill Form Container */
-.bill-form-container {
-  background-color: var(--color-white);
-  padding: var(--card-padding);
-  border-radius: var(--card-border-radius);
-  margin-top: 2rem;
-  box-shadow: var(--box-shadow);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.bill-form-container:hover {
-  box-shadow: none;
-}
-
-.bill-form-container h2 {
-  margin-bottom: 1.5rem;
-  color: var(--color-dark);
+/* Main content area - fixed height with scrolling */
+.bills-main {
+  height: 100vh;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Form Grid */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.form-group {
-  position: relative;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-group label {
-  position: relative;
-  display: block;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 2px solid var(--color-light);
-  border-radius: var(--border-radius-1);
-  background-color: var(--color-background);
-  color: var(--color-dark);
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  outline: none;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  border-color: var(--color-primary);
-  background-color: var(--color-white);
-}
-
-.form-group input:not(:placeholder-shown) ~ span,
-.form-group input:focus ~ span,
-.form-group select:focus ~ span,
-.form-group select:valid ~ span {
-  transform: translateY(-1.8rem) scale(0.85);
-  color: var(--color-primary);
-}
-
-.form-group span {
-  position: absolute;
-  left: 1rem;
-  top: 0.8rem;
-  color: var(--color-info-dark);
-  pointer-events: none;
-  transition: all 0.3s ease;
-  background-color: var(--color-white);
-  padding: 0 0.3rem;
-}
-
-/* Select2 Integration */
-.select2-container {
-  z-index: 9999 !important;
-}
-
-.select2-container--default .select2-selection--single {
-  height: 50px !important;
-  padding: 0.8rem 1rem !important;
-  border: 2px solid var(--color-primary) !important;
-  border-radius: var(--border-radius-1) !important;
-  background-color: var(--color-white) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-}
-
-.select2-container--default
-  .select2-selection--single
-  .select2-selection__rendered {
-  line-height: 32px !important;
-  color: var(--color-dark) !important;
-  font-weight: 500 !important;
-  font-size: 0.95rem !important;
-}
-
-.select2-container--default
-  .select2-selection--single
-  .select2-selection__placeholder {
-  color: var(--color-info-dark) !important;
-}
-
-.select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow {
-  height: 48px !important;
-  right: 8px !important;
-}
-
-.select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow
-  b {
-  border-color: var(--color-primary) transparent transparent transparent !important;
-  border-width: 6px 5px 0 5px !important;
-}
-
-.select2-container--default.select2-container--focus .select2-selection--single,
-.select2-container--default.select2-container--open .select2-selection--single {
-  border-color: var(--color-success) !important;
-  background-color: var(--color-white) !important;
-  box-shadow: 0 0 0 3px rgba(27, 156, 133, 0.1) !important;
-}
-
-.select2-dropdown {
-  z-index: 9999 !important;
-  border: 2px solid var(--color-primary) !important;
-  border-radius: var(--border-radius-1) !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
-  background-color: var(--color-white) !important;
-}
-
-.select2-container--default
-  .select2-results__option--highlighted[aria-selected] {
-  background-color: var(--color-primary) !important;
-}
-
-.select2-container--default .select2-search--dropdown .select2-search__field {
-  border: 2px solid var(--color-light) !important;
-  border-radius: var(--border-radius-1) !important;
-  padding: 0.5rem !important;
-}
-
-.select2-container--default
-  .select2-search--dropdown
-  .select2-search__field:focus {
-  border-color: var(--color-primary) !important;
-  outline: none !important;
-}
-
-/* Enhanced form group styling */
-.form-group.full-width.select-group {
-  position: relative;
-  z-index: 1000;
-}
-
-.select-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--color-dark);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.input-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--color-dark);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.input-label span {
-  display: block;
-  margin-bottom: 0.5rem;
-  position: static !important;
-  transform: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  color: var(--color-dark);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.input-label input {
-  margin-top: 0.5rem;
-}
-
-/* Ensure the select container is properly positioned */
-.select2-container--open {
-  z-index: 9999 !important;
-}
-
-/* Submit Button */
-.submit-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
+  flex-direction: column;
+  overflow: hidden;
   padding: 1rem;
+}
+
+/* Bills Header - Fixed */
+.bills-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  margin-bottom: 1rem;
+}
+
+.bills-header h1 {
+  margin: 0;
+}
+
+.add-bill-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
   background: var(--color-primary);
   color: white;
   border: none;
@@ -265,26 +86,57 @@ main .analyse .progresss span {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-decoration: none;
 }
 
-.submit-btn:hover {
+.add-bill-btn:hover {
   background: var(--color-success);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(27, 156, 133, 0.3);
 }
 
-/* Table Actions - Search */
-.table-actions {
-  display: flex;
-  justify-content: flex-end;
+/* Statistics Cards Override */
+main .analyse {
+  flex-shrink: 0;
   margin-bottom: 1rem;
+}
+
+main .analyse .progresss span {
+  font-size: 3rem;
+  color: var(--color-primary);
+}
+
+/* Bills Table Container - Scrollable */
+.bills-table-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--color-white);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--box-shadow);
+  padding: var(--card-padding);
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.table-header h2 {
+  margin: 0;
 }
 
 .search-box {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: var(--color-white);
+  background-color: var(--color-background);
   padding: 0.5rem 1rem;
   border-radius: var(--border-radius-1);
   border: 2px solid var(--color-light);
@@ -307,6 +159,47 @@ main .analyse .progresss span {
   color: var(--color-dark);
   font-size: 0.9rem;
   width: 250px;
+}
+
+/* Table Wrapper - Scrollable */
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrapper thead {
+  position: sticky;
+  top: 0;
+  background: var(--color-white);
+  z-index: 10;
+}
+
+.table-wrapper th {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 2px solid var(--color-light);
+  color: var(--color-dark);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table-wrapper td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-light);
+  color: var(--color-dark-variant);
+  font-size: 0.85rem;
+}
+
+.table-wrapper tr:hover {
+  background: var(--color-light);
 }
 
 /* Bills Table Styling */
@@ -387,37 +280,320 @@ main .analyse .progresss span {
   font-size: 1.2rem;
 }
 
-/* Make sure the form is properly visible */
-.bill-form {
-  position: relative;
-  z-index: 1;
+/* Custom Scrollbar */
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-/* Container adjustments to prevent overflow */
-.container {
-  position: relative;
-  overflow: visible;
+.table-wrapper::-webkit-scrollbar-track {
+  background: var(--color-light);
+  border-radius: 10px;
 }
 
-main {
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 10px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-success);
+}
+
+/* ===========================================
+   MODAL STYLES
+   =========================================== */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background-color: var(--color-white);
+  border-radius: var(--card-border-radius);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid var(--color-light);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-success)
+  );
+  color: white;
+  border-radius: var(--card-border-radius) var(--card-border-radius) 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-size: 1.3rem;
+}
+
+.modal-close {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  line-height: 1;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+/* Form Grid in Modal */
+.modal .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal .form-group {
   position: relative;
-  z-index: 1;
+}
+
+.modal .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.modal .form-group label {
+  position: relative;
+  display: block;
+}
+
+.modal .form-group input,
+.modal .form-group select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 2px solid var(--color-light);
+  border-radius: var(--border-radius-1);
+  background-color: var(--color-background);
+  color: var(--color-dark);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.modal .form-group input:focus,
+.modal .form-group select:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-white);
+}
+
+.modal .select-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.modal .input-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.modal .input-label span {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.modal .input-label input {
+  margin-top: 0.5rem;
+}
+
+/* Modal Buttons */
+.cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--color-light);
+  color: var(--color-dark);
+  border: none;
+  border-radius: var(--border-radius-1);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: var(--color-dark-variant);
+  color: white;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-1);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: var(--color-success);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(27, 156, 133, 0.3);
+}
+
+/* Select2 in Modal */
+.modal .select2-container {
+  z-index: 99999 !important;
+}
+
+.modal .select2-container--default .select2-selection--single {
+  height: 50px !important;
+  padding: 0.8rem 1rem !important;
+  border: 2px solid var(--color-light) !important;
+  border-radius: var(--border-radius-1) !important;
+  background-color: var(--color-background) !important;
+}
+
+.modal .select2-container--default .select2-selection--single:focus {
+  border-color: var(--color-primary) !important;
+}
+
+.modal .select2-dropdown {
+  z-index: 99999 !important;
+  border: 2px solid var(--color-primary) !important;
+  border-radius: var(--border-radius-1) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Custom Scrollbar for Modal */
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: var(--color-light);
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-success);
 }
 
 /* Responsive Design */
 @media screen and (max-width: 1200px) {
-  .form-grid {
+  main .analyse {
     grid-template-columns: 1fr;
   }
 }
 
 @media screen and (max-width: 768px) {
-  .bill-form-container {
-    padding: 1rem;
+  .bills-main {
+    padding: 0.5rem;
   }
 
-  .form-grid {
+  .bills-header {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 1rem;
+  }
+
+  .add-bill-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .search-box input {
+    width: 100%;
   }
 
   .action-btns {
@@ -435,75 +611,24 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .search-box {
-    width: 100%;
-  }
-
-  .search-box input {
-    width: 100%;
-  }
-
-  .table-actions {
-    width: 100%;
-  }
-
-  /* Fix for mobile viewport */
-  .select2-container--open .select2-dropdown {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%);
-    width: 90vw !important;
-    max-width: 400px;
-  }
-
-  .form-group.full-width.select-group {
-    z-index: 1000;
-  }
-
-  /* Make table scrollable on mobile */
-  main .recent-orders table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+  /* Make table scrollable horizontally on mobile */
+  .table-wrapper table {
+    min-width: 600px;
   }
 }
 
 /* Dark Mode Adjustments */
-.dark-mode-variables .bill-form-container,
-.dark-mode-variables .form-group input,
-.dark-mode-variables .form-group select {
-  background-color: var(--color-white);
-}
-
-.dark-mode-variables .form-group input,
-.dark-mode-variables .form-group select {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.dark-mode-variables .form-group span {
+.dark-mode-variables .bills-table-container {
   background-color: var(--color-white);
 }
 
 .dark-mode-variables .search-box {
-  background-color: var(--color-white);
+  background-color: var(--color-background);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-.dark-mode-variables .select2-container--default .select2-selection--single {
-  background-color: var(--color-white) !important;
-  border-color: var(--color-primary) !important;
-}
-
-.dark-mode-variables
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__rendered {
-  color: var(--color-dark) !important;
-}
-
 /* Animation for table rows */
-main .recent-orders table tbody tr {
+.table-wrapper tbody tr {
   animation: fadeIn 0.3s ease;
 }
 
@@ -519,11 +644,35 @@ main .recent-orders table tbody tr {
 }
 
 /* Empty state styling */
-main .recent-orders table tbody tr td {
+.table-wrapper tbody tr td {
   vertical-align: middle;
 }
 
-main .recent-orders table tbody tr td p {
+.table-wrapper tbody tr td p {
   margin-top: 0.5rem;
   color: var(--color-info-dark);
+}
+
+/* Print Styles */
+@media print {
+  aside,
+  .right-section,
+  .bills-header .add-bill-btn,
+  .search-box,
+  .action-btns {
+    display: none !important;
+  }
+
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .bills-main {
+    overflow: visible;
+    height: auto;
+  }
+
+  .table-wrapper {
+    overflow: visible;
+  }
 }

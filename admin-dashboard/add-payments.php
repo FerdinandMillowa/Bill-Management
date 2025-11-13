@@ -145,7 +145,7 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                     <span class="material-icons-sharp">dashboard</span>
                     <h3>Dashboard</h3>
                 </a>
-                <a href="./manage-users-dashboard.php">
+                <a href="../manage-users.php">
                     <span class="material-icons-sharp">person_outline</span>
                     <h3>Users</h3>
                 </a>
@@ -165,6 +165,10 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                     <span class="material-icons-sharp">insights</span>
                     <h3>Reports</h3>
                 </a>
+                <a href="./reports-bills.php">
+                    <span class="material-icons-sharp">description</span>
+                    <h3>Bill Reports</h3>
+                </a>
                 <a href="./profile.php">
                     <span class="material-icons-sharp">settings</span>
                     <h3>Profile</h3>
@@ -182,8 +186,14 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
         <!-- End of Sidebar Section -->
 
         <!-- Main Content -->
-        <main>
-            <h1>Payment Management</h1>
+        <main class="payments-main">
+            <div class="payments-header">
+                <h1>Payment Management</h1>
+                <a href="record-payment.php" class="add-payment-btn">
+                    <span class="material-icons-sharp">add_circle</span>
+                    Record Payment
+                </a>
+            </div>
 
             <!-- Alert Messages -->
             <?php if (!empty($success)): ?>
@@ -245,138 +255,76 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                 </div>
             </div>
 
-            <!-- Record Payment Form -->
-            <div class="payment-form-container">
-                <h2>Record New Payment</h2>
-                <form class="payment-form" method="POST" action="">
-                    <?php echo getFormTokenField(); ?>
-
-                    <div class="form-grid">
-                        <div class="form-group full-width select-group">
-                            <label class="select-label">Select Customer *</label>
-                            <select id="customer_id" name="customer_id" required>
-                                <option value="">Select Customer</option>
-                                <?php
-                                $customers->data_seek(0);
-                                while ($cust = $customers->fetch_assoc()):
-                                    $name = htmlspecialchars($cust['first_name'] . " " . $cust['last_name']);
-                                ?>
-                                    <option value="<?php echo $cust['id']; ?>"
-                                        <?php echo (isset($_POST['customer_id']) && $_POST['customer_id'] == $cust['id']) ? 'selected' : ''; ?>>
-                                        <?php echo $name; ?>
-                                    </option>
-                                <?php endwhile; ?>
-                            </select>
-                        </div>
-
-                        <!-- Customer Balance Info -->
-                        <div class="customer-balance-info" id="balanceInfo" style="display: none;">
-                            <div class="balance-card">
-                                <span class="material-icons-sharp">account_balance</span>
-                                <div class="balance-details">
-                                    <h4>Customer Balance</h4>
-                                    <p id="balanceAmount">Loading...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="number" name="amount" required placeholder=" " step="0.01" min="0.01"
-                                    value="<?php echo isset($_POST['amount']) ? htmlspecialchars($_POST['amount']) : ''; ?>">
-                                <span>Amount (MWK) *</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <select name="payment_method" required>
-                                    <option value="">Select Payment Method</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="mobile_money">Mobile Money</option>
-                                    <option value="bank">Bank Transfer</option>
-                                    <option value="card">Credit/Debit Card</option>
-                                </select>
-                                <span>Payment Method *</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="submit-btn">
-                        <span class="material-icons-sharp">add_circle</span>
-                        Record Payment
-                    </button>
-                </form>
-            </div>
-
             <!-- Payments Table -->
-            <div class="recent-orders">
-                <h2>Recent Payments</h2>
-                <div class="table-actions">
+            <div class="payments-table-container">
+                <div class="table-header">
+                    <h2>All Payments</h2>
                     <div class="search-box">
                         <span class="material-icons-sharp">search</span>
                         <input type="text" id="searchInput" placeholder="Search payments..." onkeyup="searchPayments()">
                     </div>
                 </div>
 
-                <table id="paymentsTable">
-                    <thead>
-                        <tr>
-                            <th>Payment ID</th>
-                            <th>Customer</th>
-                            <th>Amount</th>
-                            <th>Payment Method</th>
-                            <th>Date</th>
-                            <?php if (isAdmin()): ?>
-                                <th>Actions</th>
-                            <?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($recent_payments && $recent_payments->num_rows > 0): ?>
-                            <?php while ($payment = $recent_payments->fetch_assoc()): ?>
-                                <tr>
-                                    <td><span class="payment-id">#<?php echo str_pad($payment['id'], 5, '0', STR_PAD_LEFT); ?></span></td>
-                                    <td>
-                                        <div class="customer-info">
-                                            <strong><?php echo htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']); ?></strong>
-                                        </div>
-                                    </td>
-                                    <td><span class="amount success">MWK <?php echo number_format($payment['amount'], 2); ?></span></td>
-                                    <td>
-                                        <span class="method-badge method-<?php echo $payment['payment_method']; ?>">
-                                            <?php echo ucwords(str_replace('_', ' ', $payment['payment_method'])); ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo date('M j, Y g:i A', strtotime($payment['created_at'])); ?></td>
-                                    <?php if (isAdmin()): ?>
+                <div class="table-wrapper">
+                    <table id="paymentsTable">
+                        <thead>
+                            <tr>
+                                <th>Payment ID</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Payment Method</th>
+                                <th>Date</th>
+                                <?php if (isAdmin()): ?>
+                                    <th>Actions</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($recent_payments && $recent_payments->num_rows > 0): ?>
+                                <?php while ($payment = $recent_payments->fetch_assoc()): ?>
+                                    <tr>
+                                        <td><span class="payment-id">#<?php echo str_pad($payment['id'], 5, '0', STR_PAD_LEFT); ?></span></td>
                                         <td>
-                                            <div class="action-btns">
-                                                <button class="btn-icon"
-                                                    onclick="viewPayment(<?php echo $payment['id']; ?>)"
-                                                    title="View Details">
-                                                    <span class="material-icons-sharp">visibility</span>
-                                                </button>
-                                                <button class="btn-icon danger"
-                                                    onclick="deletePayment(<?php echo $payment['id']; ?>, '<?php echo htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']); ?>')"
-                                                    title="Delete">
-                                                    <span class="material-icons-sharp">delete</span>
-                                                </button>
+                                            <div class="customer-info">
+                                                <strong><?php echo htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']); ?></strong>
                                             </div>
                                         </td>
-                                    <?php endif; ?>
+                                        <td><span class="amount success">MWK <?php echo number_format($payment['amount'], 2); ?></span></td>
+                                        <td>
+                                            <span class="method-badge method-<?php echo $payment['payment_method']; ?>">
+                                                <?php echo ucwords(str_replace('_', ' ', $payment['payment_method'])); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo date('M j, Y g:i A', strtotime($payment['created_at'])); ?></td>
+                                        <?php if (isAdmin()): ?>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="btn-icon"
+                                                        onclick="viewPayment(<?php echo $payment['id']; ?>)"
+                                                        title="View Details">
+                                                        <span class="material-icons-sharp">visibility</span>
+                                                    </button>
+                                                    <button class="btn-icon danger"
+                                                        onclick="deletePayment(<?php echo $payment['id']; ?>, '<?php echo htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']); ?>')"
+                                                        title="Delete">
+                                                        <span class="material-icons-sharp">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
+                                        <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">payments</span>
+                                        <p>No payments found</p>
+                                    </td>
                                 </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
-                                    <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">payments</span>
-                                    <p>No payments found</p>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </main>
