@@ -102,6 +102,27 @@ if (isAdmin()) {
 
 // Get pending approvals count
 $pending_count = $stats['pending_count'];
+
+// Fetch customers by status for the card clicks
+$approved_customers = $conn->query("
+    SELECT id, first_name, last_name, email, phone, address, status, created_at 
+    FROM customers 
+    WHERE status='approved' 
+    ORDER BY created_at DESC
+");
+
+$pending_customers_list = $conn->query("
+    SELECT id, first_name, last_name, email, phone, address, status, created_at 
+    FROM customers 
+    WHERE status='pending' 
+    ORDER BY created_at DESC
+");
+
+$all_customers = $conn->query("
+    SELECT id, first_name, last_name, email, phone, address, status, created_at 
+    FROM customers 
+    ORDER BY created_at DESC
+");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -113,6 +134,90 @@ $pending_count = $stats['pending_count'];
     <link rel="stylesheet" href="css/admin-dashboard.css">
     <link rel="stylesheet" href="css/customers-dashboard.css">
     <title>Customer Management - Dashboard</title>
+    <style>
+        .main-content-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            min-height: 600px;
+            overflow: hidden;
+        }
+
+        .content-section {
+            flex: 1;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .section-hidden {
+            display: none;
+        }
+
+        .section-visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .back-to-form-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-1);
+            cursor: pointer;
+            margin: 1rem 0 2rem 0;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+
+        .back-to-form-btn:hover {
+            background: var(--color-success);
+            transform: translateY(-2px);
+        }
+
+        .customer-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--color-light);
+        }
+
+        .user-count-badge {
+            background: var(--color-primary);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-card-clickable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card-clickable:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+    </style>
 </head>
 
 <body>
@@ -192,191 +297,343 @@ $pending_count = $stats['pending_count'];
                 </div>
             <?php endif; ?>
 
-            <!-- Statistics Cards -->
-            <div class="analyse">
-                <div class="sales">
-                    <div class="status">
-                        <div class="info">
-                            <h3>Total Customers</h3>
-                            <h1><?php echo $stats['total_customers']; ?></h1>
+            <div class="main-content-container">
+                <!-- Statistics Cards -->
+                <div class="analyse">
+                    <div class="sales stats-card-clickable" onclick="showCustomerList('all')">
+                        <div class="status">
+                            <div class="info">
+                                <h3>Total Customers</h3>
+                                <h1><?php echo $stats['total_customers']; ?></h1>
+                            </div>
+                            <div class="progresss">
+                                <span class="material-icons-sharp">groups</span>
+                            </div>
                         </div>
-                        <div class="progresss">
-                            <span class="material-icons-sharp">groups</span>
+                    </div>
+                    <div class="visits stats-card-clickable" onclick="showCustomerList('approved')">
+                        <div class="status">
+                            <div class="info">
+                                <h3>Approved</h3>
+                                <h1><?php echo $stats['approved_count']; ?></h1>
+                            </div>
+                            <div class="progresss">
+                                <span class="material-icons-sharp">check_circle</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="searches stats-card-clickable" onclick="showCustomerList('pending')">
+                        <div class="status">
+                            <div class="info">
+                                <h3>Pending Approval</h3>
+                                <h1><?php echo $stats['pending_count']; ?></h1>
+                            </div>
+                            <div class="progresss">
+                                <span class="material-icons-sharp">pending</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="visits">
-                    <div class="status">
-                        <div class="info">
-                            <h3>Approved</h3>
-                            <h1><?php echo $stats['approved_count']; ?></h1>
-                        </div>
-                        <div class="progresss">
-                            <span class="material-icons-sharp">check_circle</span>
-                        </div>
+
+                <!-- Add Customer Form Section -->
+                <div id="addCustomerForm" class="content-section section-visible">
+                    <div class="customer-form-container">
+                        <h2>Add New Customer</h2>
+                        <form class="customer-form" method="POST" action="">
+                            <?php echo getFormTokenField(); ?>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="text" name="first_name" required placeholder=" "
+                                            value="<?php echo isset($_POST['first_name']) ? htmlspecialchars($_POST['first_name']) : ''; ?>">
+                                        <span>First Name *</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <input type="text" name="last_name" required placeholder=" "
+                                            value="<?php echo isset($_POST['last_name']) ? htmlspecialchars($_POST['last_name']) : ''; ?>">
+                                        <span>Last Name *</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <input type="email" name="email" required placeholder=" "
+                                            value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                                        <span>Email Address *</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <input type="tel" name="phone" required placeholder=" "
+                                            pattern="^(?:\+265|0)\d{9}$"
+                                            value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>">
+                                        <span>Phone Number *</span>
+                                    </label>
+                                    <small class="helper-text">Format: +265XXXXXXXXX or 0XXXXXXXXX</small>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label>
+                                        <input type="text" name="address" placeholder=" "
+                                            value="<?php echo isset($_POST['address']) ? htmlspecialchars($_POST['address']) : ''; ?>">
+                                        <span>Address (Optional)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <span class="material-icons-sharp">person_add</span>
+                                Add Customer
+                            </button>
+                        </form>
                     </div>
                 </div>
-                <div class="searches">
-                    <div class="status">
-                        <div class="info">
-                            <h3>Pending Approval</h3>
-                            <h1><?php echo $stats['pending_count']; ?></h1>
-                        </div>
-                        <div class="progresss">
-                            <span class="material-icons-sharp">pending</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Add Customer Form -->
-            <div class="customer-form-container">
-                <h2>Add New Customer</h2>
-                <form class="customer-form" method="POST" action="">
-                    <?php echo getFormTokenField(); ?>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>
-                                <input type="text" name="first_name" required placeholder=" "
-                                    value="<?php echo isset($_POST['first_name']) ? htmlspecialchars($_POST['first_name']) : ''; ?>">
-                                <span>First Name *</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="text" name="last_name" required placeholder=" "
-                                    value="<?php echo isset($_POST['last_name']) ? htmlspecialchars($_POST['last_name']) : ''; ?>">
-                                <span>Last Name *</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="email" name="email" required placeholder=" "
-                                    value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
-                                <span>Email Address *</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="tel" name="phone" required placeholder=" "
-                                    pattern="^(?:\+265|0)\d{9}$"
-                                    value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>">
-                                <span>Phone Number *</span>
-                            </label>
-                            <small class="helper-text">Format: +265XXXXXXXXX or 0XXXXXXXXX</small>
-                        </div>
-
-                        <div class="form-group full-width">
-                            <label>
-                                <input type="text" name="address" placeholder=" "
-                                    value="<?php echo isset($_POST['address']) ? htmlspecialchars($_POST['address']) : ''; ?>">
-                                <span>Address (Optional)</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="submit-btn">
-                        <span class="material-icons-sharp">person_add</span>
-                        Add Customer
+                <!-- Customer Lists Sections -->
+                <div id="allCustomersList" class="content-section section-hidden">
+                    <button class="back-to-form-btn" onclick="showAddCustomerForm()">
+                        <span class="material-icons-sharp">arrow_back</span>
+                        Back to Add Customer Form
                     </button>
-                </form>
-            </div>
-
-            <!-- Customers Table with Tabs -->
-            <div class="recent-orders">
-                <?php if (isAdmin()): ?>
-                    <div class="tabs">
-                        <button class="tab-btn active" onclick="filterCustomers('all')">
-                            <span class="material-icons-sharp">groups</span> All Customers
-                        </button>
-                        <button class="tab-btn" onclick="filterCustomers('approved')">
-                            <span class="material-icons-sharp">check_circle</span> Approved
-                        </button>
-                        <button class="tab-btn" onclick="filterCustomers('pending')">
-                            <span class="material-icons-sharp">pending</span> Pending
-                            <?php if ($pending_count > 0): ?>
-                                <span class="tab-badge"><?php echo $pending_count; ?></span>
-                            <?php endif; ?>
-                        </button>
+                    <div class="customer-list-header">
+                        <h2>All Customers</h2>
+                        <span class="customer-count-badge"><?php echo $stats['total_customers']; ?> Customers</span>
                     </div>
-                <?php else: ?>
-                    <h2>Recent Customers</h2>
-                <?php endif; ?>
-
-                <table id="customersTable">
-                    <thead>
-                        <tr>
-                            <th>Customer Name</th>
-                            <th>Contact</th>
-                            <th>Address</th>
-                            <th>Status</th>
-                            <th>Date Added</th>
-                            <?php if (isAdmin()): ?>
-                                <th>Actions</th>
-                            <?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($recent_customers && $recent_customers->num_rows > 0): ?>
-                            <?php while ($customer = $recent_customers->fetch_assoc()): ?>
-                                <tr data-status="<?php echo $customer['status']; ?>">
-                                    <td>
-                                        <div class="customer-info">
-                                            <strong><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></strong>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="contact-info">
-                                            <span><span class="material-icons-sharp small-icon">email</span> <?php echo htmlspecialchars($customer['email']); ?></span>
-                                            <span><span class="material-icons-sharp small-icon">phone</span> <?php echo htmlspecialchars($customer['phone']); ?></span>
-                                        </div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($customer['address'] ?: 'N/A'); ?></td>
-                                    <td>
-                                        <span class="badge badge-<?php echo $customer['status']; ?>">
-                                            <?php echo ucfirst($customer['status']); ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo date('M j, Y', strtotime($customer['created_at'])); ?></td>
+                    <div class="recent-orders">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Contact</th>
+                                    <th>Address</th>
+                                    <th>Status</th>
+                                    <th>Date Added</th>
                                     <?php if (isAdmin()): ?>
-                                        <td>
-                                            <div class="action-btns">
-                                                <?php if ($customer['status'] === 'pending'): ?>
-                                                    <button class="btn-icon success"
-                                                        onclick="approveCustomer(<?php echo $customer['id']; ?>, '<?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?>')"
-                                                        title="Approve">
-                                                        <span class="material-icons-sharp">check</span>
-                                                    </button>
-                                                <?php endif; ?>
-                                                <button class="btn-icon"
-                                                    onclick="editCustomer(<?php echo $customer['id']; ?>)"
-                                                    title="Edit">
-                                                    <span class="material-icons-sharp">edit</span>
-                                                </button>
-                                                <button class="btn-icon danger"
-                                                    onclick="deleteCustomer(<?php echo $customer['id']; ?>, '<?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?>')"
-                                                    title="Delete">
-                                                    <span class="material-icons-sharp">delete</span>
-                                                </button>
-                                            </div>
-                                        </td>
+                                        <th>Actions</th>
                                     <?php endif; ?>
                                 </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
-                                    <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">group</span>
-                                    <p>No customers found</p>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                <?php if ($all_customers && $all_customers->num_rows > 0): ?>
+                                    <?php while ($customer = $all_customers->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="customer-info">
+                                                    <strong><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></strong>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="contact-info">
+                                                    <span><span class="material-icons-sharp small-icon">email</span> <?php echo htmlspecialchars($customer['email']); ?></span>
+                                                    <span><span class="material-icons-sharp small-icon">phone</span> <?php echo htmlspecialchars($customer['phone']); ?></span>
+                                                </div>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($customer['address'] ?: 'N/A'); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $customer['status']; ?>">
+                                                    <?php echo ucfirst($customer['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo date('M j, Y', strtotime($customer['created_at'])); ?></td>
+                                            <?php if (isAdmin()): ?>
+                                                <td>
+                                                    <div class="action-btns">
+                                                        <?php if ($customer['status'] === 'pending'): ?>
+                                                            <button class="btn-icon success"
+                                                                onclick="approveCustomer(<?php echo $customer['id']; ?>, '<?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?>')"
+                                                                title="Approve">
+                                                                <span class="material-icons-sharp">check</span>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <button class="btn-icon"
+                                                            onclick="editCustomer(<?php echo $customer['id']; ?>)"
+                                                            title="Edit">
+                                                            <span class="material-icons-sharp">edit</span>
+                                                        </button>
+                                                        <button class="btn-icon danger"
+                                                            onclick="deleteCustomer(<?php echo $customer['id']; ?>, '<?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?>')"
+                                                            title="Delete">
+                                                            <span class="material-icons-sharp">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            <?php endif; ?>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
+                                            <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">group</span>
+                                            <p>No customers found</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="approvedCustomersList" class="content-section section-hidden">
+                    <button class="back-to-form-btn" onclick="showAddCustomerForm()">
+                        <span class="material-icons-sharp">arrow_back</span>
+                        Back to Add Customer Form
+                    </button>
+                    <div class="customer-list-header">
+                        <h2>Approved Customers</h2>
+                        <span class="customer-count-badge"><?php echo $stats['approved_count']; ?> Customers</span>
+                    </div>
+                    <div class="recent-orders">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Contact</th>
+                                    <th>Address</th>
+                                    <th>Status</th>
+                                    <th>Date Added</th>
+                                    <?php if (isAdmin()): ?>
+                                        <th>Actions</th>
+                                    <?php endif; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($approved_customers && $approved_customers->num_rows > 0): ?>
+                                    <?php while ($customer = $approved_customers->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="customer-info">
+                                                    <strong><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></strong>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="contact-info">
+                                                    <span><span class="material-icons-sharp small-icon">email</span> <?php echo htmlspecialchars($customer['email']); ?></span>
+                                                    <span><span class="material-icons-sharp small-icon">phone</span> <?php echo htmlspecialchars($customer['phone']); ?></span>
+                                                </div>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($customer['address'] ?: 'N/A'); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $customer['status']; ?>">
+                                                    <?php echo ucfirst($customer['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo date('M j, Y', strtotime($customer['created_at'])); ?></td>
+                                            <?php if (isAdmin()): ?>
+                                                <td>
+                                                    <div class="action-btns">
+                                                        <button class="btn-icon"
+                                                            onclick="editCustomer(<?php echo $customer['id']; ?>)"
+                                                            title="Edit">
+                                                            <span class="material-icons-sharp">edit</span>
+                                                        </button>
+                                                        <button class="btn-icon danger"
+                                                            onclick="deleteCustomer(<?php echo $customer['id']; ?>, '<?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?>')"
+                                                            title="Delete">
+                                                            <span class="material-icons-sharp">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            <?php endif; ?>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
+                                            <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">group</span>
+                                            <p>No approved customers found</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="pendingCustomersList" class="content-section section-hidden">
+                    <button class="back-to-form-btn" onclick="showAddCustomerForm()">
+                        <span class="material-icons-sharp">arrow_back</span>
+                        Back to Add Customer Form
+                    </button>
+                    <div class="customer-list-header">
+                        <h2>Pending Approval Customers</h2>
+                        <span class="customer-count-badge"><?php echo $stats['pending_count']; ?> Customers</span>
+                    </div>
+                    <div class="recent-orders">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Contact</th>
+                                    <th>Address</th>
+                                    <th>Status</th>
+                                    <th>Date Added</th>
+                                    <?php if (isAdmin()): ?>
+                                        <th>Actions</th>
+                                    <?php endif; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($pending_customers_list && $pending_customers_list->num_rows > 0): ?>
+                                    <?php while ($customer = $pending_customers_list->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="customer-info">
+                                                    <strong><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></strong>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="contact-info">
+                                                    <span><span class="material-icons-sharp small-icon">email</span> <?php echo htmlspecialchars($customer['email']); ?></span>
+                                                    <span><span class="material-icons-sharp small-icon">phone</span> <?php echo htmlspecialchars($customer['phone']); ?></span>
+                                                </div>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($customer['address'] ?: 'N/A'); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $customer['status']; ?>">
+                                                    <?php echo ucfirst($customer['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo date('M j, Y', strtotime($customer['created_at'])); ?></td>
+                                            <?php if (isAdmin()): ?>
+                                                <td>
+                                                    <div class="action-btns">
+                                                        <button class="btn-icon success"
+                                                            onclick="approveCustomer(<?php echo $customer['id']; ?>, '<?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?>')"
+                                                            title="Approve">
+                                                            <span class="material-icons-sharp">check</span>
+                                                        </button>
+                                                        <button class="btn-icon"
+                                                            onclick="editCustomer(<?php echo $customer['id']; ?>)"
+                                                            title="Edit">
+                                                            <span class="material-icons-sharp">edit</span>
+                                                        </button>
+                                                        <button class="btn-icon danger"
+                                                            onclick="deleteCustomer(<?php echo $customer['id']; ?>, '<?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?>')"
+                                                            title="Delete">
+                                                            <span class="material-icons-sharp">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            <?php endif; ?>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="<?php echo isAdmin() ? '6' : '5'; ?>" style="text-align: center; padding: 2rem;">
+                                            <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">group</span>
+                                            <p>No pending customers found</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
         </main>
@@ -441,7 +698,7 @@ $pending_count = $stats['pending_count'];
                                 <h3>Pending Approvals</h3>
                                 <small class="text_muted"><?php echo $pending_count; ?> awaiting approval</small>
                             </div>
-                            <button onclick="filterCustomers('pending')" style="background: none; border: none; cursor: pointer; color: var(--color-warning);">
+                            <button onclick="showCustomerList('pending')" style="background: none; border: none; cursor: pointer; color: var(--color-warning);">
                                 <span class="material-icons-sharp">arrow_forward</span>
                             </button>
                         </div>
@@ -478,7 +735,42 @@ $pending_count = $stats['pending_count'];
 
     <script src="js/admin-dashboard.js"></script>
     <script>
-        // Filter customers by status
+        // Function to show customer list based on status
+        function showCustomerList(status) {
+            // Hide all sections first
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('section-visible');
+                section.classList.add('section-hidden');
+            });
+
+            // Show the selected section
+            const targetSection = document.getElementById(status + 'CustomersList');
+            if (targetSection) {
+                targetSection.classList.remove('section-hidden');
+                targetSection.classList.add('section-visible');
+
+                // Scroll to the top of the section
+                targetSection.scrollTop = 0;
+            }
+        }
+
+        // Function to show add customer form
+        function showAddCustomerForm() {
+            // Hide all sections first
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('section-visible');
+                section.classList.add('section-hidden');
+            });
+
+            // Show the add customer form
+            document.getElementById('addCustomerForm').classList.remove('section-hidden');
+            document.getElementById('addCustomerForm').classList.add('section-visible');
+
+            // Scroll to the top of the form
+            document.getElementById('addCustomerForm').scrollTop = 0;
+        }
+
+        // Filter customers by status in the table
         function filterCustomers(status) {
             const rows = document.querySelectorAll('#customersTable tbody tr');
             const tabs = document.querySelectorAll('.tab-btn');

@@ -177,7 +177,7 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
         <main class="bills-main">
             <div class="bills-header">
                 <h1>Bill Management</h1>
-                <a href="create-bill.php" class="add-bill-btn">
+                <a href="../add-bills.php" class="add-bill-btn">
                     <span class="material-icons-sharp">add_circle</span>
                     Create Bill
                 </a>

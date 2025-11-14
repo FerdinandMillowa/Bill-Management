@@ -126,6 +126,31 @@ $recent_activities = $conn->query("
     ORDER BY a.created_at DESC
     LIMIT 5
 ");
+
+// Fetch users by role for the card clicks
+$admin_users = $conn->query("
+    SELECT id, username, role, email, full_name, status, created_at, last_login 
+    FROM users 
+    WHERE role = 'admin' AND id != ?
+    ORDER BY created_at DESC
+", $current_user_id);
+
+$regular_users = $conn->query("
+    SELECT id, username, role, email, full_name, status, created_at, last_login 
+    FROM users 
+    WHERE role = 'user' 
+    ORDER BY created_at DESC
+");
+
+$all_users_list = $conn->prepare("
+    SELECT id, username, role, email, full_name, status, created_at, last_login 
+    FROM users 
+    WHERE id != ?
+    ORDER BY created_at DESC
+");
+$all_users_list->bind_param("i", $current_user_id);
+$all_users_list->execute();
+$all_users_list_result = $all_users_list->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -137,6 +162,90 @@ $recent_activities = $conn->query("
     <link rel="stylesheet" href="css/admin-dashboard.css">
     <link rel="stylesheet" href="css/manage-users-dashboard.css">
     <title>Manage Users - Admin Dashboard</title>
+    <style>
+        .main-content-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            min-height: 600px;
+            overflow: hidden;
+        }
+
+        .content-section {
+            flex: 1;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .section-hidden {
+            display: none;
+        }
+
+        .section-visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .back-to-form-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-1);
+            cursor: pointer;
+            margin: 1rem 0 2rem 0;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+
+        .back-to-form-btn:hover {
+            background: var(--color-success);
+            transform: translateY(-2px);
+        }
+
+        .user-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--color-light);
+        }
+
+        .user-count-badge {
+            background: var(--color-primary);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-card-clickable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card-clickable:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+    </style>
 </head>
 
 <body>
@@ -213,176 +322,335 @@ $recent_activities = $conn->query("
                 </div>
             <?php endif; ?>
 
-            <!-- Statistics Cards -->
-            <div class="analyse">
-                <div class="sales">
-                    <div class="status">
-                        <div class="info">
-                            <h3>Total Users</h3>
-                            <h1><?php echo $stats['total_users']; ?></h1>
-                        </div>
-                        <div class="progresss">
-                            <span class="material-icons-sharp">people</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="visits">
-                    <div class="status">
-                        <div class="info">
-                            <h3>Administrators</h3>
-                            <h1><?php echo $stats['admin_count']; ?></h1>
-                        </div>
-                        <div class="progresss">
-                            <span class="material-icons-sharp">admin_panel_settings</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="searches">
-                    <div class="status">
-                        <div class="info">
-                            <h3>Regular Users</h3>
-                            <h1><?php echo $stats['user_count']; ?></h1>
-                        </div>
-                        <div class="progresss">
-                            <span class="material-icons-sharp">person</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Add User Form -->
-            <div class="user-form-container">
-                <h2>Create New User</h2>
-                <form class="user-form" method="POST" action="">
-                    <?php echo getFormTokenField(); ?>
-                    <input type="hidden" name="action" value="add_user">
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>
-                                <input type="text" name="full_name" placeholder=" "
-                                    value="<?php echo isset($_POST['full_name']) ? htmlspecialchars($_POST['full_name']) : ''; ?>">
-                                <span>Full Name (Optional)</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="text" name="username" required placeholder=" "
-                                    pattern="^[a-zA-Z0-9_]{3,50}$"
-                                    value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
-                                <span>Username *</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="email" name="email" placeholder=" "
-                                    value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
-                                <span>Email (Optional)</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <select name="role" required>
-                                    <option value="">Select Role</option>
-                                    <option value="user">Regular User</option>
-                                    <option value="admin">Administrator</option>
-                                </select>
-                                <span>User Role *</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="password" name="password" id="password" required placeholder=" " minlength="8">
-                                <span>Password *</span>
-                            </label>
-                            <div class="password-strength">
-                                <div class="strength-bar" id="strengthBar"></div>
+            <div class="main-content-container">
+                <!-- Statistics Cards -->
+                <div class="analyse">
+                    <div class="sales stats-card-clickable" onclick="showUserList('all')">
+                        <div class="status">
+                            <div class="info">
+                                <h3>Total Users</h3>
+                                <h1><?php echo $stats['total_users']; ?></h1>
                             </div>
-                            <small class="helper-text">Min. 8 chars, 1 uppercase, 1 lowercase, 1 number</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="password" name="confirm_password" required placeholder=" ">
-                                <span>Confirm Password *</span>
-                            </label>
+                            <div class="progresss">
+                                <span class="material-icons-sharp">people</span>
+                            </div>
                         </div>
                     </div>
+                    <div class="visits stats-card-clickable" onclick="showUserList('admin')">
+                        <div class="status">
+                            <div class="info">
+                                <h3>Administrators</h3>
+                                <h1><?php echo $stats['admin_count']; ?></h1>
+                            </div>
+                            <div class="progresss">
+                                <span class="material-icons-sharp">admin_panel_settings</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="searches stats-card-clickable" onclick="showUserList('regular')">
+                        <div class="status">
+                            <div class="info">
+                                <h3>Regular Users</h3>
+                                <h1><?php echo $stats['user_count']; ?></h1>
+                            </div>
+                            <div class="progresss">
+                                <span class="material-icons-sharp">person</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <button type="submit" class="submit-btn">
-                        <span class="material-icons-sharp">person_add</span>
-                        Create User
+                <!-- Add User Form Section -->
+                <div id="addUserForm" class="content-section section-visible">
+                    <div class="user-form-container">
+                        <h2>Create New User</h2>
+                        <form class="user-form" method="POST" action="">
+                            <?php echo getFormTokenField(); ?>
+                            <input type="hidden" name="action" value="add_user">
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="text" name="full_name" placeholder=" "
+                                            value="<?php echo isset($_POST['full_name']) ? htmlspecialchars($_POST['full_name']) : ''; ?>">
+                                        <span>Full Name (Optional)</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <input type="text" name="username" required placeholder=" "
+                                            pattern="^[a-zA-Z0-9_]{3,50}$"
+                                            value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
+                                        <span>Username *</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <input type="email" name="email" placeholder=" "
+                                            value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                                        <span>Email (Optional)</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <select name="role" required>
+                                            <option value="">Select Role</option>
+                                            <option value="user">Regular User</option>
+                                            <option value="admin">Administrator</option>
+                                        </select>
+                                        <span>User Role *</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <input type="password" name="password" id="password" required placeholder=" " minlength="8">
+                                        <span>Password *</span>
+                                    </label>
+                                    <div class="password-strength">
+                                        <div class="strength-bar" id="strengthBar"></div>
+                                    </div>
+                                    <small class="helper-text">Min. 8 chars, 1 uppercase, 1 lowercase, 1 number</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>
+                                        <input type="password" name="confirm_password" required placeholder=" ">
+                                        <span>Confirm Password *</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <span class="material-icons-sharp">person_add</span>
+                                Create User
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- User Lists Sections -->
+                <div id="allUsersList" class="content-section section-hidden">
+                    <button class="back-to-form-btn" onclick="showAddUserForm()">
+                        <span class="material-icons-sharp">arrow_back</span>
+                        Back to Add User Form
                     </button>
-                </form>
-            </div>
-
-            <!-- Users Table -->
-            <div class="recent-orders">
-                <h2>All Users</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Username</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($users->num_rows > 0): ?>
-                            <?php while ($user = $users->fetch_assoc()): ?>
+                    <div class="user-list-header">
+                        <h2>All Users</h2>
+                        <span class="user-count-badge"><?php echo $stats['total_users']; ?> Users</span>
+                    </div>
+                    <div class="recent-orders">
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <strong><?php echo htmlspecialchars($user['full_name'] ?: $user['username']); ?></strong>
-                                            <?php if (!empty($user['email'])): ?>
-                                                <small><?php echo htmlspecialchars($user['email']); ?></small>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($user['username']); ?></td>
-                                    <td>
-                                        <span class="badge badge-<?php echo $user['role']; ?>">
-                                            <?php echo ucfirst($user['role']); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-<?php echo $user['status'] ?? 'active'; ?>">
-                                            <?php echo ucfirst($user['status'] ?? 'active'); ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <button class="btn-icon" onclick="editUser(<?php echo $user['id']; ?>)" title="Edit">
-                                                <span class="material-icons-sharp">edit</span>
-                                            </button>
-                                            <button class="btn-icon warning" onclick="resetPassword(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Reset Password">
-                                                <span class="material-icons-sharp">lock_reset</span>
-                                            </button>
-                                            <button class="btn-icon danger" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Delete">
-                                                <span class="material-icons-sharp">delete</span>
-                                            </button>
-                                        </div>
-                                    </td>
+                                    <th>User</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
                                 </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="6" style="text-align: center; padding: 2rem;">
-                                    <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">people</span>
-                                    <p>No other users found</p>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                <?php if ($all_users_list_result->num_rows > 0): ?>
+                                    <?php while ($user = $all_users_list_result->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="user-info">
+                                                    <strong><?php echo htmlspecialchars($user['full_name'] ?: $user['username']); ?></strong>
+                                                    <?php if (!empty($user['email'])): ?>
+                                                        <small><?php echo htmlspecialchars($user['email']); ?></small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($user['username']); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $user['role']; ?>">
+                                                    <?php echo ucfirst($user['role']); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $user['status'] ?? 'active'; ?>">
+                                                    <?php echo ucfirst($user['status'] ?? 'active'); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="btn-icon" onclick="editUser(<?php echo $user['id']; ?>)" title="Edit">
+                                                        <span class="material-icons-sharp">edit</span>
+                                                    </button>
+                                                    <button class="btn-icon warning" onclick="resetPassword(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Reset Password">
+                                                        <span class="material-icons-sharp">lock_reset</span>
+                                                    </button>
+                                                    <button class="btn-icon danger" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Delete">
+                                                        <span class="material-icons-sharp">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                                            <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">people</span>
+                                            <p>No other users found</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="adminUsersList" class="content-section section-hidden">
+                    <button class="back-to-form-btn" onclick="showAddUserForm()">
+                        <span class="material-icons-sharp">arrow_back</span>
+                        Back to Add User Form
+                    </button>
+                    <div class="user-list-header">
+                        <h2>Administrator Users</h2>
+                        <span class="user-count-badge"><?php echo $stats['admin_count']; ?> Administrators</span>
+                    </div>
+                    <div class="recent-orders">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($admin_users && $admin_users->num_rows > 0): ?>
+                                    <?php while ($user = $admin_users->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="user-info">
+                                                    <strong><?php echo htmlspecialchars($user['full_name'] ?: $user['username']); ?></strong>
+                                                    <?php if (!empty($user['email'])): ?>
+                                                        <small><?php echo htmlspecialchars($user['email']); ?></small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($user['username']); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $user['role']; ?>">
+                                                    <?php echo ucfirst($user['role']); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $user['status'] ?? 'active'; ?>">
+                                                    <?php echo ucfirst($user['status'] ?? 'active'); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="btn-icon" onclick="editUser(<?php echo $user['id']; ?>)" title="Edit">
+                                                        <span class="material-icons-sharp">edit</span>
+                                                    </button>
+                                                    <button class="btn-icon warning" onclick="resetPassword(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Reset Password">
+                                                        <span class="material-icons-sharp">lock_reset</span>
+                                                    </button>
+                                                    <button class="btn-icon danger" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Delete">
+                                                        <span class="material-icons-sharp">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                                            <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">admin_panel_settings</span>
+                                            <p>No administrator users found</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="regularUsersList" class="content-section section-hidden">
+                    <button class="back-to-form-btn" onclick="showAddUserForm()">
+                        <span class="material-icons-sharp">arrow_back</span>
+                        Back to Add User Form
+                    </button>
+                    <div class="user-list-header">
+                        <h2>Regular Users</h2>
+                        <span class="user-count-badge"><?php echo $stats['user_count']; ?> Regular Users</span>
+                    </div>
+                    <div class="recent-orders">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($regular_users && $regular_users->num_rows > 0): ?>
+                                    <?php while ($user = $regular_users->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="user-info">
+                                                    <strong><?php echo htmlspecialchars($user['full_name'] ?: $user['username']); ?></strong>
+                                                    <?php if (!empty($user['email'])): ?>
+                                                        <small><?php echo htmlspecialchars($user['email']); ?></small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($user['username']); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $user['role']; ?>">
+                                                    <?php echo ucfirst($user['role']); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $user['status'] ?? 'active'; ?>">
+                                                    <?php echo ucfirst($user['status'] ?? 'active'); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="btn-icon" onclick="editUser(<?php echo $user['id']; ?>)" title="Edit">
+                                                        <span class="material-icons-sharp">edit</span>
+                                                    </button>
+                                                    <button class="btn-icon warning" onclick="resetPassword(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Reset Password">
+                                                        <span class="material-icons-sharp">lock_reset</span>
+                                                    </button>
+                                                    <button class="btn-icon danger" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Delete">
+                                                        <span class="material-icons-sharp">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                                            <span class="material-icons-sharp" style="font-size: 3rem; color: var(--color-info-dark);">person</span>
+                                            <p>No regular users found</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
         </main>
@@ -463,6 +731,49 @@ $recent_activities = $conn->query("
 
     <script src="js/admin-dashboard.js"></script>
     <script>
+        // Function to show user list based on type
+        function showUserList(type) {
+            // Hide all sections first
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('section-visible');
+                section.classList.add('section-hidden');
+            });
+
+            // Show the selected section
+            let targetSection;
+            if (type === 'all') {
+                targetSection = document.getElementById('allUsersList');
+            } else if (type === 'admin') {
+                targetSection = document.getElementById('adminUsersList');
+            } else if (type === 'regular') {
+                targetSection = document.getElementById('regularUsersList');
+            }
+
+            if (targetSection) {
+                targetSection.classList.remove('section-hidden');
+                targetSection.classList.add('section-visible');
+
+                // Scroll to the top of the section
+                targetSection.scrollTop = 0;
+            }
+        }
+
+        // Function to show add user form
+        function showAddUserForm() {
+            // Hide all sections first
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('section-visible');
+                section.classList.add('section-hidden');
+            });
+
+            // Show the add user form
+            document.getElementById('addUserForm').classList.remove('section-hidden');
+            document.getElementById('addUserForm').classList.add('section-visible');
+
+            // Scroll to the top of the form
+            document.getElementById('addUserForm').scrollTop = 0;
+        }
+
         // Password strength checker
         const passwordInput = document.getElementById('password');
         const strengthBar = document.getElementById('strengthBar');

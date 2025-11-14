@@ -189,7 +189,7 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
         <main class="payments-main">
             <div class="payments-header">
                 <h1>Payment Management</h1>
-                <a href="record-payment.php" class="add-payment-btn">
+                <a href="../add-payments.php" class="add-payment-btn">
                     <span class="material-icons-sharp">add_circle</span>
                     Record Payment
                 </a>
