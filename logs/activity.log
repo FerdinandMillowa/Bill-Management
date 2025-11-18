@@ -27,3 +27,5 @@
 [2025-11-13 06:16:11] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
 [2025-11-13 06:17:55] User: admin (ID: 1) | Action: profile_updated | Details: User updated their profile | IP: 127.0.0.1
 [2025-11-14 08:52:58] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-11-17 14:05:51] User: admin (ID: 1) | Action: login | Details: User logged in successfully | IP: 127.0.0.1
+[2025-11-18 06:46:04] User: Elia (ID: 2) | Action: login | Details: User logged in successfully | IP: 127.0.0.1

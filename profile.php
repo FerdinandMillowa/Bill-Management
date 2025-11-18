@@ -169,8 +169,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 "sidebar main"
                 "footer footer";
             grid-template-columns: 300px 1fr;
+            grid-template-rows: auto 1fr auto;
             gap: var(--spacing-xl, 20px);
             padding: var(--spacing-xl, 20px);
+            height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
         }
 
         header {
@@ -182,21 +186,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             background: var(--bg-dark, #24323d);
             border-radius: var(--radius-xl, 20px);
             padding: var(--spacing-xl, 25px);
-            height: fit-content;
             box-shadow: var(--shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
-            position: sticky;
-            top: 20px;
+            height: fit-content;
         }
 
         .profile-main {
             grid-area: main;
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-xl, 20px);
         }
 
         footer {
             grid-area: footer;
+        }
+
+        .profile-card {
+            background: var(--bg-dark, #24323d);
+            border-radius: var(--radius-xl, 20px);
+            padding: var(--spacing-xl, 25px);
+            box-shadow: var(--shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--spacing-sm, 10px);
+            margin-bottom: var(--spacing-lg, 20px);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .profile-avatar {
@@ -296,13 +340,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             font-size: 1.1rem;
         }
 
-        .profile-card {
-            background: var(--bg-dark, #24323d);
-            border-radius: var(--radius-xl, 20px);
-            padding: var(--spacing-xl, 25px);
-            box-shadow: var(--shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
-        }
-
         .card-header {
             display: flex;
             align-items: center;
@@ -324,13 +361,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             margin: 0;
         }
 
-        .tabs {
-            display: flex;
-            gap: var(--spacing-sm, 10px);
-            margin-bottom: var(--spacing-lg, 20px);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-        }
-
         .tab {
             padding: var(--spacing-md, 12px) var(--spacing-lg, 20px);
             background: transparent;
@@ -350,27 +380,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         .tab.active {
             color: var(--color-accent, #1ab188);
             border-bottom-color: var(--color-accent, #1ab188);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .activity-list {
@@ -469,6 +478,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                     "main"
                     "footer";
                 grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto;
+                height: auto;
+                overflow: auto;
             }
 
             .profile-sidebar {
@@ -480,6 +492,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 width: 120px;
                 height: 120px;
                 font-size: 3rem;
+            }
+
+            .tab-content {
+                height: auto;
+                overflow: visible;
             }
         }
 
@@ -508,7 +525,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
 <body>
     <header>
-        <?php include 'header.php'; ?>
+        <?php include 'header-new.php'; ?>
         <?php if (!empty($success)) : ?>
             <p class="success-message">
                 <i class="fas fa-check-circle"></i>
@@ -565,7 +582,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
     <!-- Profile Main Content -->
     <main class="profile-main">
-        <!-- Tabs -->
         <div class="profile-card">
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('overview')">

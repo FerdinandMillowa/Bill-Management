@@ -59,7 +59,9 @@ require_once 'auth-helper.php';
                                 <li class="divider"></li>
                             <?php endif; ?>
                             <li>
-                                <a href="./admin-dashboard/profile.php"> <i class="fas fa-user"></i> My Profile </a>
+                                <a href="<?php echo isAdmin() ? './admin-dashboard/profile.php' : 'profile.php'; ?>">
+                                    <i class="fas fa-user"></i> My Profile
+                                </a>
                             </li>
                             <li>
                                 <a href="logout.php">
