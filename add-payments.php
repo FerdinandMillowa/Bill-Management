@@ -71,7 +71,7 @@ $recent_payments = $conn->query("
            c.first_name, c.last_name 
     FROM payments p
     JOIN customers c ON p.customer_id = c.id
-    ORDER BY p.created_at DESC LIMIT 5
+    ORDER BY p.created_at DESC LIMIT 3
 ");
 ?>
 <!DOCTYPE html>
@@ -212,15 +212,21 @@ $recent_payments = $conn->query("
           <?php while ($payment = $recent_payments->fetch_assoc()): ?>
             <li>
               <strong><?php echo htmlspecialchars($payment['first_name'] . " " . $payment['last_name']); ?></strong>
-              <span>MWK <?php echo number_format($payment['amount'], 2); ?></span>
-              <span><?php echo ucwords(str_replace('_', ' ', $payment['payment_method'])); ?></span>
-              <small><?php echo date("M j, Y", strtotime($payment['created_at'])); ?></small>
+              <span><i class="fas fa-money-bill-wave"></i> MWK <?php echo number_format($payment['amount'], 2); ?></span>
+              <span><i class="fas fa-credit-card"></i> <?php echo ucwords(str_replace('_', ' ', $payment['payment_method'])); ?></span>
+              <small><i class="fas fa-calendar"></i> <?php echo date("M j, Y", strtotime($payment['created_at'])); ?></small>
             </li>
           <?php endwhile; ?>
         <?php else: ?>
           <li>No payments found</li>
         <?php endif; ?>
       </ul>
+      <div class="view-all-link">
+        <a href="payments.php">
+          <i class="fas fa-receipt"></i> View All Payments
+          <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
     </div>
   </section>
 

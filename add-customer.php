@@ -71,9 +71,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Fetch recent customers (latest 5) - show ALL to admins, only approved to regular users
 if (isAdmin()) {
-    $recent_customers = $conn->query("SELECT id, first_name, last_name, email, phone, status FROM customers ORDER BY created_at DESC LIMIT 10");
+    $recent_customers = $conn->query("SELECT id, first_name, last_name, email, phone, status FROM customers ORDER BY created_at DESC LIMIT 3");
 } else {
-    $recent_customers = $conn->query("SELECT id, first_name, last_name, email, phone, status FROM customers WHERE status='approved' ORDER BY created_at DESC LIMIT 5");
+    $recent_customers = $conn->query("SELECT id, first_name, last_name, email, phone, status FROM customers WHERE status='approved' ORDER BY created_at DESC LIMIT 3");
 }
 ?>
 <!DOCTYPE html>
@@ -222,7 +222,7 @@ if (isAdmin()) {
     <!-- Right: Recent Customers -->
     <section class="list-section">
         <div class="customer-list">
-            <h3><?php echo isAdmin() ? 'All Recent Customers' : 'Recently Added Customers'; ?></h3>
+            <h3><?php echo isAdmin() ? 'Recent Customers' : 'Recently Added Customers'; ?></h3>
             <ul>
                 <?php if ($recent_customers->num_rows > 0): ?>
                     <?php while ($cust = $recent_customers->fetch_assoc()): ?>
@@ -258,6 +258,12 @@ if (isAdmin()) {
                     <li>No customers added yet.</li>
                 <?php endif; ?>
             </ul>
+            <div class="view-all-link">
+                <a href="customers.php">
+                    <i class="fas fa-users"></i> View All Customers
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
         </div>
     </section>
 

@@ -44,9 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($check_result->num_rows == 0) {
             throw new Exception("Selected customer is not approved or doesn't exist.");
         }
-        
+
         $customer_data = $check_result->fetch_assoc();
-        $bill_name = $customer_data['full_name']; // Use customer's full name as bill_name
+        $bill_name = $customer_data['full_name'];
         $check->close();
 
         // Insert bill with bill_name (customer's name)
@@ -65,13 +65,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Fetch recent bills
+// Fetch recent bills (latest 3 for height matching)
 $recent_bills = $conn->query("
     SELECT b.bill_name, b.amount, b.description, b.created_at, 
            c.first_name, c.last_name 
     FROM bills b
     JOIN customers c ON b.customer_id = c.id
-    ORDER BY b.created_at DESC LIMIT 5
+    ORDER BY b.created_at DESC LIMIT 3
 ");
 
 // Fetch customers for dropdown
@@ -106,9 +106,15 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
     <header>
         <?php include 'header-new.php'; ?>
         <?php if (!empty($success)): ?>
-            <p class="success-message"><?php echo $success; ?></p>
+            <p class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <?php echo $success; ?>
+            </p>
         <?php elseif (!empty($error)): ?>
-            <p class="error-message"><?php echo $error; ?></p>
+            <p class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo $error; ?>
+            </p>
         <?php endif; ?>
     </header>
 
@@ -131,6 +137,7 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                         </option>
                     <?php endwhile; ?>
                 </select>
+                <span>Customer</span>
             </label>
 
             <label>
@@ -145,7 +152,9 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                 <span>Description</span>
             </label>
 
-            <button type="submit" class="submit">Add Bill</button>
+            <button type="submit" class="submit">
+                <i class="fas fa-file-invoice"></i> Add Bill
+            </button>
             <p class="signin">Return to <a href="index.php">Home</a></p>
         </form>
     </section>
@@ -159,16 +168,22 @@ $customers = $conn->query("SELECT id, first_name, last_name FROM customers WHERE
                     <?php while ($bill = $recent_bills->fetch_assoc()): ?>
                         <li>
                             <strong><?php echo htmlspecialchars($bill['first_name'] . " " . $bill['last_name']); ?></strong>
-                            <span class="bill-name"><?php echo htmlspecialchars($bill['bill_name']); ?></span>
-                            <span>MWK <?php echo number_format($bill['amount'], 2); ?></span>
-                            <span><?php echo htmlspecialchars($bill['description']); ?></span>
-                            <small><?php echo date("M j, Y", strtotime($bill['created_at'])); ?></small>
+                            <span><i class="fas fa-file-invoice-dollar"></i> <?php echo htmlspecialchars($bill['bill_name']); ?></span>
+                            <span><i class="fas fa-money-bill-wave"></i> MWK <?php echo number_format($bill['amount'], 2); ?></span>
+                            <span><i class="fas fa-info-circle"></i> <?php echo htmlspecialchars($bill['description']); ?></span>
+                            <small><i class="fas fa-calendar"></i> <?php echo date("M j, Y", strtotime($bill['created_at'])); ?></small>
                         </li>
                     <?php endwhile; ?>
                 <?php else: ?>
                     <li>No bills found</li>
                 <?php endif; ?>
             </ul>
+            <div class="view-all-link">
+                <a href="bills.php">
+                    <i class="fas fa-file-invoice"></i> View All Bills
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
         </div>
     </section>
 
